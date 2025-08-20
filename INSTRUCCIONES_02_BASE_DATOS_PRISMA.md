@@ -1,7 +1,7 @@
 # INSTRUCCIONES 02: Base de Datos y Modelos Prisma
 
 ## Objetivo
-Configurar la base de datos PostgreSQL con Prisma ORM y crear todos los modelos necesarios para el sistema de registro de asistencias.
+Configurar la base de datos SQLite (para desarrollo) con Prisma ORM y crear todos los modelos necesarios para el sistema de registro de asistencias.
 
 ## Tareas a Ejecutar
 
@@ -28,7 +28,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -503,6 +503,12 @@ npx prisma migrate dev --name init
 npx prisma generate
 ```
 
+**Nota sobre SQLite:**
+- El archivo `dev.db` se creará automáticamente en el directorio raíz
+- Para desarrollo, no es necesario configurar un servidor de base de datos
+- Los datos persisten entre reinicios de la aplicación
+- Ideal para maquetado y pruebas iniciales
+
 ### 7. Seeds (datos iniciales)
 
 Crear `prisma/seed.ts`:
@@ -583,11 +589,11 @@ npm run db:seed
 
 ## Entregables
 
-✅ Esquema de Prisma configurado con todos los modelos  
+✅ Esquema de Prisma configurado con SQLite para desarrollo  
 ✅ Cliente de Prisma configurado  
 ✅ Tipos TypeScript personalizados definidos  
 ✅ Servicios de base de datos implementados  
-✅ Migraciones ejecutadas  
+✅ Migraciones ejecutadas (archivo dev.db creado)  
 ✅ Seeds con datos iniciales  
 
 ## Comandos Útiles
@@ -596,7 +602,7 @@ npm run db:seed
 # Ver base de datos en navegador
 npm run db:studio
 
-# Resetear base de datos
+# Resetear base de datos (elimina dev.db y recrea)
 npm run db:reset
 
 # Aplicar cambios sin migración
@@ -604,7 +610,40 @@ npm run db:push
 
 # Generar cliente después de cambios
 npx prisma generate
+
+# Backup de base de datos SQLite
+cp dev.db dev.db.backup
 ```
+
+## Migración a Producción
+
+**Cuando esté listo para producción:**
+
+1. **Configurar PostgreSQL:**
+   ```bash
+   # Instalar PostgreSQL localmente o usar servicio cloud
+   # Actualizar DATABASE_URL en .env.local
+   DATABASE_URL="postgresql://user:password@host:5432/database"
+   ```
+
+2. **Actualizar schema.prisma:**
+   ```prisma
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+   ```
+
+3. **Ejecutar migraciones:**
+   ```bash
+   npx prisma migrate dev --name switch_to_postgresql
+   npx prisma generate
+   ```
+
+4. **Migrar datos (si es necesario):**
+   - Exportar datos de SQLite
+   - Importar a PostgreSQL
+   - O usar seeds para recrear datos de prueba
 
 ## Siguiente Paso
 Continuar con **INSTRUCCIONES_03_INTEGRACION_GOOGLE.md** para configurar las APIs de Google Calendar y Gmail.

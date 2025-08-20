@@ -110,7 +110,7 @@ Crear archivo `.env.local`:
 
 ```env
 # Base
-DATABASE_URL="postgresql://username:password@localhost:5432/inapa_attendance"
+DATABASE_URL="file:./dev.db"
 APP_BASE_URL="http://localhost:3000"
 JWT_SECRET="your-jwt-secret-here"
 
@@ -132,7 +132,34 @@ UPSTASH_REDIS_REST_TOKEN=""
 
 # NODE_ENV
 NODE_ENV="development"
+
+# Configuración de Base de Datos
+# Para desarrollo: SQLite (fácil setup)
+# Para producción: PostgreSQL (cambiar DATABASE_URL)
 ```
+
+### 6. Configuración de Base de Datos
+
+**Para Desarrollo (Recomendado):**
+- Usar SQLite local para facilitar el desarrollo
+- No requiere instalación de PostgreSQL
+- Archivo `dev.db` se crea automáticamente
+- Ideal para pruebas y maquetado
+- Los datos persisten entre reinicios
+- Fácil de resetear y recrear
+- Compatible con Prisma Studio para visualización
+
+**Para Producción:**
+- Cambiar a PostgreSQL
+- Actualizar `DATABASE_URL` a connection string de PostgreSQL
+- Ejemplo: `postgresql://user:password@host:5432/database`
+
+**Ventajas de SQLite para desarrollo:**
+- ✅ Zero configuración - no necesita servidor de BD
+- ✅ Archivo único y portable
+- ✅ Perfecto para maquetado y pruebas
+- ✅ Mismas funcionalidades SQL que PostgreSQL
+- ✅ Migración sencilla a PostgreSQL después
 
 ### 6. Configuración de TypeScript
 
@@ -291,7 +318,7 @@ module.exports = nextConfig
 ✅ Todas las dependencias instaladas  
 ✅ shadcn/ui configurado con componentes básicos  
 ✅ Estructura de directorios creada  
-✅ Variables de entorno configuradas  
+✅ Variables de entorno configuradas con SQLite para desarrollo  
 ✅ TypeScript y Tailwind CSS configurados  
 ✅ Next.js configurado para el proyecto
 

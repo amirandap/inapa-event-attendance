@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organizer {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+
+  @@map("organizers")
+}
+
+model Event {
+  id            String     @id @default(uuid())
+  googleEventId String     @unique
+  title         String
+  description   String?
+  location      String?
+  startAt       DateTime
+  endAt         DateTime
+  formToken     String     @unique
+  status        String     @default("active")
+  organizerId   Int
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  checkins      Checkin[]
+  emailJobs     EmailJob[]
+  organizer     Organizer  @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  invitees      Invitee[]
+
+  @@map("events")
+}
+
+model Invitee {
+  id          String    @id
+  eventId     String
+  cedula      String
+  nombre      String
+  email       String
+  cargo       String?
+  institucion String?
+  sexo        String?
+  telefono    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  checkins    Checkin[]
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, cedula])
+  @@map("invitees")
+}
+
+model Checkin {
+  id          String   @id
+  eventId     String
+  inviteeId   String?
+  cedula      String
+  nombre      String
+  cargo       String?
+  institucion String?
+  correo      String?
+  sexo        String?
+  telefono    String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  invitees    Invitee? @relation(fields: [inviteeId], references: [id])
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, cedula])
+  @@map("checkins")
+}
+
+model EmailJob {
+  id          Int       @id @default(autoincrement())
+  eventId     String
+  kind        String
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String    @default("pending")
+  errorMsg    String?
+  retryCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("email_jobs")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_config")
+}

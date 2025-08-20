@@ -1169,5 +1169,13 @@ curl http://localhost:3000/api/mail/send
 curl http://localhost:3000/api/docs
 ```
 
+## Notas de Desarrollo
+
+**Base de Datos:**
+- Durante desarrollo se usa SQLite (archivo `dev.db`)
+- Los datos persisten entre reinicios
+- Para producción, migrar a PostgreSQL siguiendo las instrucciones del archivo 02
+- Usar `npx prisma studio` para ver/editar datos durante desarrollo
+
 ## Siguiente Paso
 Continuar con **INSTRUCCIONES_06_GENERACION_REPORTES_JOBS.md** para implementar la generación de reportes y el sistema de jobs.
