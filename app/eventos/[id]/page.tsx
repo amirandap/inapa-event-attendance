@@ -21,6 +21,7 @@ import {
 import { useEvent, useInvitees, useCheckins } from '@/lib/hooks/useApi'
 import { formatDate } from '@/lib/utils/dates'
 import { InviteesTable } from '@/components/events/InviteesTable'
+import { MeetingSummary } from '@/components/events/MeetingSummary'
 import Link from 'next/link'
 
 export default function EventDetailPage() {
@@ -149,6 +150,12 @@ export default function EventDetailPage() {
                   </Link>
                 </Button>
               )}
+              <Button asChild variant="outline">
+                <Link href={`/eventos/${event.id}/resumen`} target="_blank">
+                  <Download className="h-4 w-4 mr-2" />
+                  Resumen Completo
+                </Link>
+              </Button>
               <Button variant="outline">
                 <Mail className="h-4 w-4 mr-2" />
                 Enviar Invitaciones
@@ -219,7 +226,7 @@ export default function EventDetailPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Registrados</CardTitle>
+              <CardTitle className="text-sm font-medium">Presentes</CardTitle>
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -232,11 +239,11 @@ export default function EventDetailPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
+              <CardTitle className="text-sm font-medium">Ausentes</CardTitle>
               <UserX className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{notAttended}</div>
+              <div className="text-2xl font-bold text-red-600">{notAttended}</div>
               <p className="text-xs text-muted-foreground">
                 Sin registrar asistencia
               </p>
@@ -262,12 +269,15 @@ export default function EventDetailPage() {
           <CardContent className="p-0">
             <Tabs defaultValue="invitees" className="w-full">
               <CardHeader>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="invitees">
                     Invitados ({totalInvitees})
                   </TabsTrigger>
                   <TabsTrigger value="checkins">
-                    Registrados ({totalCheckins})
+                    Presentes ({totalCheckins})
+                  </TabsTrigger>
+                  <TabsTrigger value="summary">
+                    Resumen
                   </TabsTrigger>
                   <TabsTrigger value="analytics">
                     Análisis
@@ -304,7 +314,7 @@ export default function EventDetailPage() {
                               {formatDate(new Date(checkin.createdAt), 'PPpp')}
                             </div>
                             <Badge variant="outline" className="text-green-600 border-green-600">
-                              Registrado
+                              Presente
                             </Badge>
                           </div>
                         </div>
@@ -312,6 +322,14 @@ export default function EventDetailPage() {
                     </div>
                   )}
                 </div>
+              </TabsContent>
+
+              <TabsContent value="summary" className="p-6 pt-0">
+                <MeetingSummary 
+                  event={event}
+                  invitees={invitees}
+                  showActions={true}
+                />
               </TabsContent>
 
               <TabsContent value="analytics" className="p-6 pt-0">
@@ -336,19 +354,19 @@ export default function EventDetailPage() {
                     {/* Métricas adicionales */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium mb-2">Resumen de Invitaciones</h4>
+                        <h4 className="font-medium mb-2">Resumen de Asistencia</h4>
                         <div className="space-y-1 text-sm">
                           <div className="flex justify-between">
-                            <span>Total enviadas:</span>
+                            <span>Total invitados:</span>
                             <span className="font-medium">{totalInvitees}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Confirmaron:</span>
+                            <span>Presentes:</span>
                             <span className="font-medium text-green-600">{totalCheckins}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Pendientes:</span>
-                            <span className="font-medium text-orange-600">{notAttended}</span>
+                            <span>Ausentes:</span>
+                            <span className="font-medium text-red-600">{notAttended}</span>
                           </div>
                         </div>
                       </div>

@@ -1,10 +1,43 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api/client'
 import type { ApiResponse } from '@/lib/api/client'
 
-// Hook genérico para manejo de estado de API
+export function useEventSummary(eventId: string) {
+  const [summary, setSummary] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchSummary = useCallback(async () => {
+    if (!eventId) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/events/${eventId}/summary`)
+      if (!response.ok) {
+        throw new Error('Error al cargar resumen')
+      }
+      const data = await response.json()
+      setSummary(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar resumen')
+      setSummary(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [eventId])
+
+  useEffect(() => {
+    fetchSummary()
+  }, [fetchSummary])
+
+  return { summary, loading, error, refetch: fetchSummary }
+}
+
+// Hook genérico para mutaciones API
 export function useApiState<T>() {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
