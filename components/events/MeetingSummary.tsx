@@ -17,7 +17,8 @@ import {
 import { formatDate } from '@/lib/utils/dates'
 import { EventType, InviteeType } from '@/lib/types'
 import { generateEventQRData } from '@/lib/qr/generator'
-import { useRef, useMemo } from 'react'
+import { useRef, useEffect, useState } from 'react'
+import Image from 'next/image'
 
 interface MeetingSummaryProps {
   event: EventType & { organizer?: { name?: string; email: string } }
@@ -35,15 +36,33 @@ export function MeetingSummary({
   printMode = false 
 }: MeetingSummaryProps) {
   const printRef = useRef<HTMLDivElement>(null)
+  const [qrData, setQrData] = useState<any>(null)
 
-  // Generar datos del QR
-  const qrData = useMemo(() => {
-    return generateEventQRData(event.id, event.formToken)
+  // Generar datos del QR de forma asíncrona
+  useEffect(() => {
+    const generateQRData = async () => {
+      try {
+        const data = await generateEventQRData(event.id, event.formToken)
+        setQrData(data)
+      } catch (error) {
+        console.error('Error generating QR data:', error)
+        // Fallback
+        setQrData({
+          shortUrl: `${window.location.origin}/a/${event.formToken}`,
+          fullUrl: `${window.location.origin}/a/${event.formToken}`,
+          qrCodeUrl: null,
+          shortCode: null
+        })
+      }
+    }
+
+    generateQRData()
   }, [event.id, event.formToken])
 
   // Usar QR proporcionado o el generado
-  const finalQrCodeUrl = qrCodeUrl || qrData.qrCodeUrl
-  const attendanceUrl = qrData.attendanceUrl
+  const finalQrCodeUrl = qrCodeUrl || qrData?.qrCodeUrl
+  const shortUrl = qrData?.shortUrl
+  const shortCode = qrData?.shortCode
 
   const handlePrint = () => {
     if (printRef.current) {
@@ -135,10 +154,14 @@ export function MeetingSummary({
             {/* Header */}
             <div className="text-center mb-8 header">
               <div className="mb-4">
-                {/* Logo placeholder - puedes agregar el logo aquí */}
-                <div className="mx-auto h-16 w-auto mb-4 flex items-center justify-center">
-                  <Users className="h-12 w-12 text-blue-600" />
-                </div>
+                <Image 
+                  src="/images/inapa-logo.svg"
+                  alt="INAPA Logo"
+                  width={120}
+                  height={60}
+                  className="mx-auto mb-4"
+                  priority
+                />
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 RESUMEN DE REUNIÓN
@@ -236,35 +259,42 @@ export function MeetingSummary({
                 <CardContent className="text-center">
                   <div className="inline-block p-6 bg-white border-2 border-gray-200 rounded-lg">
                     {/* QR Code real */}
-                    <img 
-                      src={finalQrCodeUrl}
-                      alt="QR Code para registro de asistencia"
-                      className="w-48 h-48 mx-auto"
-                      onError={(e) => {
-                        // Fallback si falla la carga del QR
-                        e.currentTarget.style.display = 'none'
-                        const fallback = e.currentTarget.nextElementSibling as HTMLElement
-                        if (fallback) fallback.style.display = 'flex'
-                      }}
-                    />
-                    {/* Fallback placeholder */}
-                    <div className="w-48 h-48 bg-gray-100 border-2 border-dashed border-gray-300 items-center justify-center hidden">
-                      <div className="text-center">
-                        <QrCode className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-500">QR Code</p>
-                        <p className="text-xs text-gray-400 mt-1 break-all max-w-40">
-                          {attendanceUrl}
-                        </p>
+                    {finalQrCodeUrl ? (
+                      <Image
+                        src={finalQrCodeUrl}
+                        alt="QR Code para registro de asistencia"
+                        width={192}
+                        height={192}
+                        className="mx-auto"
+                        unoptimized // Para URLs externas de QR
+                      />
+                    ) : (
+                      /* Fallback placeholder mientras carga */
+                      <div className="w-48 h-48 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center">
+                          <QrCode className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                          <p className="text-sm text-gray-500">Generando QR...</p>
+                          <p className="text-xs text-gray-400 mt-1 break-all max-w-40">
+                            {shortUrl || 'Cargando...'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                   <p className="text-sm text-gray-600 mt-4 max-w-md mx-auto">
                     Los participantes pueden escanear este código QR con su dispositivo móvil 
                     para registrar su asistencia de manera rápida y sencilla.
                   </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    URL de acceso: <code className="bg-gray-100 px-1 rounded">{attendanceUrl}</code>
-                  </p>
+                  <div className="text-xs text-gray-500 mt-2 space-y-1">
+                    {shortCode && (
+                      <p>
+                        <strong>Código corto:</strong> <code className="bg-gray-100 px-2 py-1 rounded font-mono text-sm">{shortCode}</code>
+                      </p>
+                    )}
+                    <p>
+                      <strong>URL de acceso:</strong> <code className="bg-gray-100 px-1 rounded break-all">{shortUrl || 'Cargando...'}</code>
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -369,6 +399,28 @@ export function MeetingSummary({
                     <div className="flex items-start">
                       <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
                         4
+                      </div>
+                      <div>
+                        <strong>Acceso alternativo:</strong> Si no pueden escanear el QR, pueden acceder manualmente digitando:
+                        {shortCode ? (
+                          <div className="mt-2">
+                            <code className="bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg text-lg font-mono font-bold text-blue-800 block w-fit">
+                              {window.location.origin}/s/{shortCode}
+                            </code>
+                            <p className="text-xs text-gray-500 mt-1">o simplemente: <strong>{shortCode}</strong></p>
+                          </div>
+                        ) : (
+                          <div className="mt-2">
+                            <code className="bg-gray-50 border border-gray-200 px-2 py-1 rounded text-sm font-mono break-all">
+                              {shortUrl || 'Cargando...'}
+                            </code>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                        5
                       </div>
                       <div>
                         <strong>Control manual:</strong> Use la columna &quot;Asistencia&quot; para marcar manualmente los participantes presentes.
