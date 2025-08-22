@@ -1,7 +1,5 @@
 // Cliente API para el frontend
-export const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3030/api' 
-  : '/api'
+export const API_BASE_URL = '/api'
 
 export interface ApiResponse<T = unknown> {
   success: boolean
@@ -45,15 +43,27 @@ class ApiClient {
     }
 
     try {
+      console.log('Making API request to:', url)
       const response = await fetch(url, config)
+      
+      if (!response.ok) {
+        console.error('API response not ok:', response.status, response.statusText)
+        return {
+          success: false,
+          error: `HTTP_${response.status}`,
+          message: `Error ${response.status}: ${response.statusText}`
+        }
+      }
+      
       const data = await response.json()
+      console.log('API response received:', data)
       return data
     } catch (error) {
       console.error('API request failed:', error)
       return {
         success: false,
         error: 'NETWORK_ERROR',
-        message: 'Error de conexión con el servidor'
+        message: error instanceof Error ? error.message : 'Error de conexión con el servidor'
       }
     }
   }

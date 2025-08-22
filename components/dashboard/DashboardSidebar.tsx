@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { 
   CalendarDays, 
@@ -28,12 +29,19 @@ export function DashboardSidebar() {
     <div className="flex flex-col w-64 bg-white shadow-lg">
       {/* Logo */}
       <div className="flex items-center justify-center px-4 py-6 border-b">
-        <div className="w-10 h-10 bg-inapa-primary rounded-full flex items-center justify-center">
-          <span className="text-white font-bold text-lg">INAPA</span>
-        </div>
-        <div className="ml-3">
-          <h2 className="text-lg font-bold text-inapa-primary">INAPA</h2>
-          <p className="text-sm text-gray-600">Dashboard</p>
+        <div className="flex items-center">
+          <Image 
+            src="/images/inapa-logo.svg"
+            alt="INAPA Logo"
+            width={40}
+            height={40}
+            className="mr-3"
+            priority
+          />
+          <div>
+            <h2 className="text-lg font-bold text-inapa-primary">INAPA</h2>
+            <p className="text-sm text-gray-600">Dashboard</p>
+          </div>
         </div>
       </div>
 
