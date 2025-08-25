@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
+import { CalendarAuthManager } from '@/components/calendar/CalendarAuthManager'
 import { 
   Settings, 
   Users, 
@@ -20,10 +21,15 @@ import {
   Database,
   Bell,
   Palette,
-  Globe
+  Globe,
+  Calendar
 } from 'lucide-react'
 
 export default function ConfiguracionPage() {
+  // En una app real, obtienes estos valores del contexto de usuario/sesión
+  const userId = "user-123"; // ID del usuario logueado
+  const userEmail = "admin@inapa.gob.do"; // Email del usuario logueado
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -49,6 +55,10 @@ export default function ConfiguracionPage() {
                 General
               </Button>
               <Button variant="ghost" className="w-full justify-start">
+                <Calendar className="h-4 w-4 mr-2" />
+                Google Calendar
+              </Button>
+              <Button variant="ghost" className="w-full justify-start">
                 <Users className="h-4 w-4 mr-2" />
                 Usuarios
               </Button>
@@ -70,6 +80,19 @@ export default function ConfiguracionPage() {
 
         {/* Panel de configuración */}
         <div className="lg:col-span-3 space-y-6">
+          {/* Configuración de Google Calendar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Integración con Google Calendar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CalendarAuthManager userId={userId} userEmail={userEmail} />
+            </CardContent>
+          </Card>
+
           {/* Configuración General */}
           <Card>
             <CardHeader>
