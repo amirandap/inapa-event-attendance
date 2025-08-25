@@ -52,126 +52,174 @@ En "OAuth consent screen" > "Scopes", agrega:
 ### 5. Actualizar Variables de Entorno
 Después de crear el OAuth Client, actualiza `.env.local`:
 
-```bash
-# Google OAuth (reemplaza con tus valores reales)
+```env
+# Variables OAuth requeridas (reemplaza con tus valores reales)
 GOOGLE_CLIENT_ID="tu-client-id-oauth.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="tu-client-secret"
-GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="genera-una-clave-secreta-aleatoria-larga"
+
+# Variables del Service Account (mantener las existentes)
+GOOGLE_PROJECT_ID="redar-469611"
+GOOGLE_CLIENT_EMAIL="inapa-calendar-service@redar-469611.iam.gserviceaccount.com"
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
+GOOGLE_CALENDAR_ID="minutas@inapa.gob.do"
 ```
 
-### 6. Crear Endpoint de Callback
-Crea el archivo `/app/api/auth/google/callback/route.ts`:
+### 6. Generar NEXTAUTH_SECRET
+Ejecuta uno de estos comandos para generar una clave secreta:
 
-```typescript
-import { NextRequest } from 'next/server';
-import { googleOAuthService } from '@/lib/auth/google-oauth';
-import { redirect } from 'next/navigation';
-
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const code = searchParams.get('code');
-  const state = searchParams.get('state'); // userId
-  const error = searchParams.get('error');
-
-  if (error) {
-    return redirect('/dashboard/configuracion?error=oauth_denied');
-  }
-
-  if (!code || !state) {
-    return redirect('/dashboard/configuracion?error=invalid_callback');
-  }
-
-  try {
-    await googleOAuthService.exchangeCodeForTokens(code, state);
-    return redirect('/dashboard/configuracion?success=calendar_connected');
-  } catch (error) {
-    console.error('Error en OAuth callback:', error);
-    return redirect('/dashboard/configuracion?error=oauth_failed');
-  }
-}
-```
-
-### 7. Actualizar CalendarAuthManager
-Modifica el componente para usar las URLs correctas:
-
-```typescript
-// En components/calendar/CalendarAuthManager.tsx
-const handleConnect = async () => {
-  try {
-    const authUrl = googleOAuthService.generateAuthUrl(userId);
-    window.location.href = authUrl; // Redirigir a Google
-  } catch (error) {
-    console.error('Error generando URL de auth:', error);
-  }
-};
-```
-
-## Testing
-
-### 1. Verificar Configuración
 ```bash
-# Verificar que las variables estén definidas
-npm run dev
-# Visita: http://localhost:3000/dashboard/configuracion
+# Opción 1: OpenSSL
+openssl rand -base64 32
+
+# Opción 2: Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
-### 2. Flujo de Autenticación
-1. Clic en "Conectar Google Calendar"
-2. Redirección a Google OAuth
-3. Autorización del usuario
-4. Redirección de vuelta a la app
-5. Tokens guardados en base de datos
+## Verificación Manual de la Configuración
 
-### 3. Posibles Errores y Soluciones
+### 1. Verificar Variables de Entorno
+Revisa que todas las variables estén presentes en `.env.local`:
+- ✅ `GOOGLE_CLIENT_ID` (debe terminar en .apps.googleusercontent.com)
+- ✅ `GOOGLE_CLIENT_SECRET` (cadena alfanumérica)
+- ✅ `NEXTAUTH_URL` (URL completa de tu aplicación)
+- ✅ `NEXTAUTH_SECRET` (cadena aleatoria larga)
 
-#### Error: "redirect_uri_mismatch"
-- Verificar que la URI en Google Console coincida exactamente
-- Incluir protocolo (http/https)
+### 2. Reiniciar Servidor
+```bash
+npm run dev
+```
+
+### 3. Probar Autenticación
+1. Ve a la página que requiere autenticación Google
+2. Haz clic en "Conectar Google Calendar" o "Iniciar sesión con Google"
+3. Verifica que te redirige a Google (sin error 400)
+4. Completa el flujo de autenticación
+
+## Solución de Problemas Comunes
+
+### Error: "redirect_uri_mismatch"
+**Causa**: La URI de redirección no coincide con la configurada en Google Console
+**Solución**: 
+- Verificar que la URI en Google Console sea exactamente: `http://localhost:3000/api/auth/google/callback`
 - No usar trailing slashes
+- Incluir protocolo (http/https)
 
-#### Error: "invalid_client"
-- Verificar GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET
-- Asegurar que el proyecto esté habilitado
+### Error: "invalid_client"
+**Causa**: Credenciales OAuth incorrectas
+**Solución**:
+- Verificar `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`
+- Asegurar que el proyecto esté habilitado en Google Cloud Console
 
-#### Error: "access_denied"
-- Usuario canceló la autorización
-- Manejar en el callback con mensaje amigable
+### Error: "access_denied"
+**Causa**: Usuario canceló la autorización
+**Solución**:
+- Manejar este caso en la aplicación con un mensaje amigable
+- Verificar que los scopes solicitados sean apropiados
 
-## Notas de Seguridad
+### Error: "unauthorized_client"
+**Causa**: OAuth Consent Screen no configurado correctamente
+**Solución**:
+- Completar toda la información requerida en OAuth Consent Screen
+- Verificar que la aplicación esté en modo de testing o publicada
+
+## Configuración para Producción
+
+### 1. Actualizar Variables de Entorno
+```env
+NEXTAUTH_URL="https://tu-dominio-produccion.com"
+```
+
+### 2. Actualizar Google Cloud Console
+- Agregar URIs de producción a "Authorized redirect URIs"
+- Actualizar información en OAuth Consent Screen
+- Verificar dominio si es necesario
+
+### 3. Publicar la Aplicación OAuth
+1. En Google Cloud Console, ir a "OAuth consent screen"
+2. Cambiar de "Testing" a "In production" cuando esté listo
+3. Completar proceso de verificación si es requerido
+
+## Consideraciones de Seguridad
 
 ### Para Desarrollo
-- Usar `http://localhost:3000` está bien
-- Google permite localhost para desarrollo
+- Usar `http://localhost:3000` está permitido por Google
+- Mantener credenciales en `.env.local` (no commitear)
 
 ### Para Producción
 - Usar HTTPS obligatorio
-- Configurar dominio real en redirect URIs
-- Verificar OAuth Consent Screen para usuarios externos
+- Configurar dominio real verificado
+- Rotar credenciales periódicamente
+- Implementar rate limiting
+- Validar tokens en el servidor
 
-## Estructura Final de Variables
+## Testing Manual
 
-```bash
-# Service Account (operaciones automáticas)
+### 1. Flujo Completo de Autenticación
+- ✅ Redirección a Google exitosa
+- ✅ Autorización del usuario
+- ✅ Redirección de vuelta a la aplicación
+- ✅ Tokens guardados correctamente
+- ✅ Acceso a recursos protegidos
+
+### 2. Manejo de Errores
+- ✅ Usuario cancela autorización
+- ✅ Credenciales inválidas
+- ✅ Errores de red
+- ✅ Tokens expirados
+
+### 3. Persistencia de Sesión
+- ✅ Sesión persiste entre recargas
+- ✅ Logout funciona correctamente
+- ✅ Auto-renovación de tokens
+
+## Estructura Final de Variables de Entorno
+
+```env
+# Base de la aplicación
+DATABASE_URL="file:./dev.db"
+PORT="3000"
+APP_BASE_URL="http://localhost:3000"
+JWT_SECRET="tu-jwt-secret"
+
+# OAuth 2.0 para autenticación de usuarios
+GOOGLE_CLIENT_ID="123456789-abcdef.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="GOCSPX-tu-client-secret"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="tu-nextauth-secret-generado"
+
+# Service Account para operaciones automáticas
 GOOGLE_PROJECT_ID="redar-469611"
 GOOGLE_CLIENT_EMAIL="inapa-calendar-service@redar-469611.iam.gserviceaccount.com"
 GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
 GOOGLE_CALENDAR_ID="minutas@inapa.gob.do"
 
-# OAuth Client (autenticación de usuarios)
-GOOGLE_CLIENT_ID="123456789-abcdef.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="GOCSPX-..."
-GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+# Email
+GMAIL_SENDER="minutas@inapa.gob.do"
 
-# URLs base
-APP_BASE_URL="http://localhost:3000"
-NEXTAUTH_URL="http://localhost:3000"
+# Configuraciones adicionales...
+NODE_ENV="development"
 ```
 
-## Siguientes Pasos
+## Checklist de Verificación
 
-1. Completar configuración en Google Cloud Console
-2. Actualizar variables de entorno con valores reales
-3. Crear endpoint de callback
-4. Probar flujo de autenticación
-5. Implementar manejo de errores
-6. Documentar para producción
+- [ ] OAuth 2.0 Client creado en Google Cloud Console
+- [ ] OAuth Consent Screen configurado completamente
+- [ ] Scopes necesarios agregados
+- [ ] URIs de redirección configurados correctamente
+- [ ] Variables de entorno agregadas a `.env.local`
+- [ ] `NEXTAUTH_SECRET` generado
+- [ ] Servidor reiniciado
+- [ ] Flujo de autenticación probado manualmente
+- [ ] Manejo de errores verificado
+- [ ] Documentación de producción preparada
+
+## Próximos Pasos
+
+1. ✅ Completar configuración en Google Cloud Console
+2. ✅ Actualizar variables de entorno con valores reales
+3. ✅ Probar flujo de autenticación completo
+4. ✅ Verificar manejo de errores
+5. ✅ Preparar configuración para producción
+6. ✅ Documentar proceso para el equipo
