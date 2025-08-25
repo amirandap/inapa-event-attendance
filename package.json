@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "./scripts/dev.sh",
-    "dev:next": "next dev -p ${PORT:-3000}",
+    "dev:next": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -13,9 +13,10 @@
     "db:push": "npx prisma db push",
     "db:studio": "npx prisma studio",
     "db:generate": "npx prisma generate",
-    "kill:port": "lsof -ti :${PORT:-3000} | xargs kill -9 || echo 'No process on port ${PORT:-3000}'"
+    "kill:port": "lsof -ti :3000 | xargs kill -9 || echo 'No process on port 3000'"
   },
   "dependencies": {
+    "@googleapis/calendar": "^11.0.1",
     "@hookform/resolvers": "^5.2.1",
     "@prisma/client": "^6.14.0",
     "@radix-ui/react-dialog": "^1.1.15",

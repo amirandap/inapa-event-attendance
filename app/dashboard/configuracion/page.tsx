@@ -13,6 +13,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { CalendarAuthManager } from '@/components/calendar/CalendarAuthManager'
+import { GoogleServiceAccountConfig } from '@/components/calendar/GoogleServiceAccountConfig'
 import { 
   Settings, 
   Users, 

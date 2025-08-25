@@ -2,6 +2,9 @@
 export interface EventType {
   id: string
   googleEventId: string
+  googleICalUID?: string | null
+  recurringEventId?: string | null
+  etag?: string | null
   title: string
   description?: string | null
   location?: string | null
@@ -12,6 +15,16 @@ export interface EventType {
   organizerId: number
   createdAt: Date
   updatedAt: Date
+  lastSyncAt: Date | null
+  sourceCreatedAt: Date | null
+  sourceUpdatedAt: Date | null
+  sequence: number
+  meetingId: string | null
+  conferenceData: any | null
+  source: string
+  syncStatus: string
+  syncError: string | null
+  syncRetries: number
 }
 
 export interface OrganizerType {
@@ -158,6 +171,16 @@ export interface GoogleCalendarEvent {
     resource?: boolean
   }>
   status: string
+  sequence?: number
+  etag?: string
+  iCalUID?: string
+  recurringEventId?: string
+  conferenceData?: {
+    conferenceId: string
+    [key: string]: any
+  }
+  created?: string
+  updated?: string
 }
 
 // Tipos para Jobs

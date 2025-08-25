@@ -19,23 +19,36 @@ model Organizer {
 }
 
 model Event {
-  id            String     @id @default(uuid())
-  googleEventId String     @unique
-  title         String
-  description   String?
-  location      String?
-  startAt       DateTime
-  endAt         DateTime
-  formToken     String     @unique
-  status        String     @default("active")
-  organizerId   Int
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  checkins      Checkin[]
-  emailJobs     EmailJob[]
-  organizer     Organizer  @relation(fields: [organizerId], references: [id], onDelete: Cascade)
-  invitees      Invitee[]
-  shortUrls     ShortUrl[]
+  id               String     @id @default(uuid())
+  googleEventId    String     @unique  // ID del evento en Google Calendar
+  googleICalUID    String?    @unique  // ID único global de iCal
+  recurringEventId String?    // ID del evento recurrente padre
+  etag            String?     // ETag de Google Calendar para detectar cambios
+  title           String
+  description     String?
+  location        String?
+  startAt         DateTime
+  endAt           DateTime
+  formToken       String     @unique
+  status          String     @default("active")  // active, cancelled, tentative
+  organizerId     Int
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  lastSyncAt      DateTime?  // Última sincronización exitosa
+  sourceCreatedAt DateTime?  // Fecha de creación en Google Calendar
+  sourceUpdatedAt DateTime?  // Última actualización en Google Calendar
+  sequence        Int        @default(0)  // Número de versión del evento
+  meetingId       String?    // ID de Google Meet si existe
+  conferenceData  Json?      // Datos de la conferencia virtual
+  source          String     @default("manual")  // google_calendar, ical, manual
+  syncStatus      String     @default("pending_sync") // synced, pending_sync, sync_failed, local_only
+  syncError       String?    // Mensaje de error de sincronización
+  syncRetries     Int        @default(0) // Número de intentos de sincronización
+  checkins        Checkin[]
+  emailJobs       EmailJob[]
+  organizer       Organizer  @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  invitees        Invitee[]
+  shortUrls       ShortUrl[]
 
   @@map("events")
 }

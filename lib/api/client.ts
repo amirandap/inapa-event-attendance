@@ -48,10 +48,29 @@ class ApiClient {
       
       if (!response.ok) {
         console.error('API response not ok:', response.status, response.statusText)
+        
+        // Intentar obtener más detalles del error
+        let errorDetails = '';
+        try {
+          const errorResponse = await response.text();
+          console.error('Error response body:', errorResponse);
+          
+          try {
+            // Intentar parsear como JSON si es posible
+            const errorJson = JSON.parse(errorResponse);
+            errorDetails = errorJson.error || errorJson.message || errorResponse;
+          } catch {
+            // Si no es JSON, usar el texto completo
+            errorDetails = errorResponse;
+          }
+        } catch (readError) {
+          console.error('Failed to read error response:', readError);
+        }
+        
         return {
           success: false,
           error: `HTTP_${response.status}`,
-          message: `Error ${response.status}: ${response.statusText}`
+          message: `Error ${response.status}: ${response.statusText}${errorDetails ? ` - ${errorDetails}` : ''}`
         }
       }
       

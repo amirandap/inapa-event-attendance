@@ -3,3 +3,4 @@ Sincronizacion del calendario y creacion en DB, eligir identificador unico de ev
 Eliminar pre-dashboard
 Organizar folder de documentacion
 Generacion del excel y su formato
+Eliminar los metodos fallback de sincronizacion de calendario
