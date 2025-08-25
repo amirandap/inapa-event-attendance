@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Obtener eventos de los próximos 7 días
+    // Obtener eventos de los próximos 7 días (con fallback automático)
     const events = await googleCalendarService.listEvents(
       new Date(),
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -48,6 +48,26 @@ export async function GET(request: NextRequest) {
     return errorResponse(
       'CALENDAR_ERROR',
       error.message || 'Error obteniendo eventos de Google Calendar',
+      500
+    )
+  }
+}
+
+// Nuevo endpoint para validar conectividad
+export async function PUT(request: NextRequest) {
+  try {
+    const validation = await googleCalendarService.validateConfiguration()
+    
+    return successResponse({
+      validation,
+      hasAccess: validation.api || validation.ical
+    }, 'Validación de conectividad completada')
+
+  } catch (error: any) {
+    console.error('Error validando conectividad:', error)
+    return errorResponse(
+      'VALIDATION_ERROR',
+      error.message || 'Error validando conectividad',
       500
     )
   }
