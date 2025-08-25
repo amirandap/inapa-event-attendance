@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Script para matar cualquier proceso en el puerto 3030
-PORT=3030
+# Usar el puerto de la variable de entorno PORT o 3000 por defecto
+PORT=${PORT:-3000}
 
 echo "🔍 Verificando si hay procesos en el puerto $PORT..."
 
