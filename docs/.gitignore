@@ -1,0 +1,8 @@
+# Excluir archivos de backup de la documentación
+*_backup.md
+backup_*
+*.bak
+
+# Archivos temporales de documentación
+.DS_Store
+Thumbs.db

@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/tests/coverage
+*.test.js.snap
 
 # next.js
 /.next/
@@ -23,6 +25,7 @@
 # misc
 .DS_Store
 *.pem
+Thumbs.db
 
 # debug
 npm-debug.log*
@@ -32,6 +35,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 !.env.local.example
 
 # database files
@@ -39,6 +43,7 @@ yarn-error.log*
 /prisma/*.db-journal
 *.sqlite
 *.sqlite3
+*.db-backup
 
 # vercel
 .vercel
@@ -52,3 +57,49 @@ credentials.json
 service-account.json
 google-credentials.json
 *-credentials.json
+
+# IDE files
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# temporary files
+*.tmp
+*.temp

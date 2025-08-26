@@ -41,7 +41,15 @@ Sistema web para el registro automático de asistencias en reuniones del Institu
 - [ ] Sistema de generación de reportes
 - [ ] Jobs automáticos y notificaciones
 
-## 📁 Estructura del Proyecto
+## 🤝 Contribución
+
+Lee nuestra [Guía de Contribución](./CONTRIBUTING.md) para entender cómo participar en el desarrollo del proyecto.
+
+## 📋 Roadmap
+
+Consulta nuestro [TODO.md](./TODO.md) para ver las tareas pendientes y el roadmap del proyecto.
+
+## 📚 Documentación
 
 ```
 ├── app/                          # Next.js App Router
@@ -107,18 +115,21 @@ npm run db:seed               # Ejecutar seeds
 npm run lint                  # ESLint
 ```
 
-## 📋 Instrucciones de Desarrollo
+## � Documentación
 
-El proyecto está dividido en 6 fases de desarrollo con instrucciones detalladas:
+Para instrucciones detalladas de desarrollo, configuración y APIs, consulta la documentación organizada en:
 
-1. **[INSTRUCCIONES_01_CONFIGURACION_INICIAL.md](./INSTRUCCIONES_01_CONFIGURACION_INICIAL.md)** ✅
-2. **[INSTRUCCIONES_02_BASE_DATOS_PRISMA.md](./INSTRUCCIONES_02_BASE_DATOS_PRISMA.md)** ✅
-3. **[INSTRUCCIONES_03_INTEGRACION_GOOGLE.md](./INSTRUCCIONES_03_INTEGRACION_GOOGLE.md)** ⏭️ (Pospuesto)
-4. **[INSTRUCCIONES_04_UI_COMPONENTES.md](./INSTRUCCIONES_04_UI_COMPONENTES.md)** ✅
-5. **[INSTRUCCIONES_05_APIS_ENDPOINTS.md](./INSTRUCCIONES_05_APIS_ENDPOINTS.md)**
-4. **[INSTRUCCIONES_04_UI_COMPONENTES.md](./INSTRUCCIONES_04_UI_COMPONENTES.md)**
-5. **[INSTRUCCIONES_05_APIS_ENDPOINTS.md](./INSTRUCCIONES_05_APIS_ENDPOINTS.md)**
-6. **[INSTRUCCIONES_06_GENERACION_REPORTES_JOBS.md](./INSTRUCCIONES_06_GENERACION_REPORTES_JOBS.md)**
+**[📖 Documentación Completa](./docs/README.md)**
+
+### Inicio Rápido
+- [Configuración Inicial](./docs/setup/01-configuracion-inicial.md)
+- [Base de Datos](./docs/setup/02-base-datos-prisma.md)
+- [Integración Google](./docs/setup/03-integracion-google.md)
+
+### Para Desarrolladores
+- [Documentación de Desarrollo](./docs/development/documentacion-desarrollo.md)
+- [APIs y Endpoints](./docs/api/05-apis-endpoints.md)
+- [UI y Componentes](./docs/development/04-ui-componentes.md)
 
 ## 🎯 Funcionalidades Principales
 

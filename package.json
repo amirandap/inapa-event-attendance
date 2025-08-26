@@ -1,7 +1,28 @@
 {
   "name": "inapa-event-attendance",
   "version": "0.1.0",
+  "description": "Sistema de gestión de asistencia a eventos para INAPA con integración a Google Calendar",
   "private": true,
+  "author": {
+    "name": "INAPA - Departamento de TI",
+    "email": "minutas@inapa.gob.do"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amirandap/inapa-event-attendance.git"
+  },
+  "keywords": [
+    "nextjs",
+    "typescript",
+    "prisma",
+    "google-calendar",
+    "event-management",
+    "attendance-system"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "./scripts/dev.sh",
     "dev:next": "next dev",
