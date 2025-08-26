@@ -5,8 +5,9 @@ interface CalendarAuth {
   userId: string;
   email: string;
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;
   expiresAt: Date;
+  lastSyncAt?: Date | null;
 }
 
 interface EventData {
@@ -62,7 +63,7 @@ export class GoogleOAuthCalendarService {
    */
   async exchangeCodeForTokens(code: string, userId: string): Promise<CalendarAuth> {
     try {
-      const { tokens } = await this.oauth2Client.getAccessToken(code);
+      const { tokens } = await this.oauth2Client.getToken(code);
       
       // Obtener info del usuario
       this.oauth2Client.setCredentials(tokens);
@@ -71,13 +72,23 @@ export class GoogleOAuthCalendarService {
 
       // Calcular expiración
       const expiresAt = new Date();
-      expiresAt.setSeconds(expiresAt.getSeconds() + (tokens.expiry_date || 3600));
+      if (tokens.expiry_date) {
+        expiresAt.setTime(tokens.expiry_date);
+      } else {
+        // Default: 1 hora desde ahora
+        expiresAt.setHours(expiresAt.getHours() + 1);
+      }
+
+      // Verificar que tenemos refresh token
+      if (!tokens.refresh_token) {
+        throw new Error('No se recibió refresh token. Asegúrate de incluir prompt=consent en la URL de autorización.');
+      }
 
       const authData: CalendarAuth = {
         userId,
         email: userInfo.email!,
         accessToken: tokens.access_token!,
-        refreshToken: tokens.refresh_token!,
+        refreshToken: tokens.refresh_token,
         expiresAt
       };
 
@@ -464,7 +475,7 @@ export class GoogleOAuthCalendarService {
         email: auth.email,
         expiresAt: auth.expiresAt,
         calendars: calendars.length,
-        lastSync: auth.lastSyncAt
+        lastSync: auth.lastSyncAt || undefined
       };
     } catch (error: any) {
       console.error(`Error verificando estado para ${userEmail}:`, error.message);
