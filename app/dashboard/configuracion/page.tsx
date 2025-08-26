@@ -13,6 +13,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { CalendarAuthManager } from '@/components/calendar/CalendarAuthManager'
+import CalendarSyncManager from '@/components/calendar/CalendarSyncManager'
 import { GoogleServiceAccountConfig } from '@/components/calendar/GoogleServiceAccountConfig'
 import { 
   Settings, 
@@ -91,6 +92,19 @@ export default function ConfiguracionPage() {
             </CardHeader>
             <CardContent>
               <CalendarAuthManager userId={userId} userEmail={userEmail} />
+            </CardContent>
+          </Card>
+
+          {/* Sincronización de Calendar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Sincronización de Eventos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CalendarSyncManager />
             </CardContent>
           </Card>
 

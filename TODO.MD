@@ -1,184 +1,86 @@
-# 📋 TODO - Sincronización Google Calendar MVP
+# 📋 TODO - MVP URGENTE (Solo 3 Tareas Críticas)
 
-## 🎯 **OBJETIVO ACTUALIZADO**
-Sistema funcional que permita:
-1. 🔄 **Sincronización automática** de eventos desde Google Calendar
-2. 📱 **Formulario de asistencia** completamente funcional 
-3. 👥 **Dashboard organizador** para ver eventos y estadísticas
-4. ✅ **Registro de asistencias** con validación de cédulas dominicanas
+## 🎯 **OBJETIVO MVP SIMPLIFICADO**
+**3 funcionalidades críticas ÚNICAMENTE**:
+1. 🔄 **Sincronización Googl---
 
-**META: Sistema funcional en 7 días con enfoque Google Calendar** 🚀
+**Última actualización**: Agosto 26, 2025  
+**Versión**: 3.0 - MVP Ultra Simplificado  
+**Estado**: 🚧 URGENTE - Solo 3 tareas críticas  
 
----
+**🎯 PRÓXIMA ACCIÓN INMEDIATA**: Completar webhook Google Calendarendar → BD** (eventos aparecen automáticamente)
+2. 👥 **Vista Organizador** (ver eventos sincronizados + link formulario)
+3. 📱 **Formulario Asistencia** (asistentes completan datos + validación cédula)
 
-## 🔴 **FASE 1: SINCRONIZACIÓN GOOGLE CALENDAR** (3-4 días)
-
-### **Día 1-2: Webhook y Procesamiento de Eventos**
-- [ ] **Completar Webhook Google Calendar**
-  - **Descripción**: Implementar procesamiento real de eventos en webhook endpoint
-  - **Criterios de Aceptación**:
-    * Webhook recibe notificaciones de Google Calendar correctamente
-    * Procesa eventos creados, actualizados y eliminados
-    * Maneja errores de red y datos inválidos apropiadamente
-    * Logs detallados para debugging de sincronización
-
-- [ ] **Sincronización a Base de Datos**
-  - **Descripción**: Convertir eventos de Google Calendar a modelo local
-  - **Criterios de Aceptación**:
-    * Mapea correctamente todos los campos requeridos
-    * Evita duplicados usando googleEventId único
-    * Actualiza eventos existentes cuando cambian en Google
-    * Mantiene integridad referencial en BD
-
-### **Día 2-3: Biblioteca Google Calendar**
-- [ ] **Servicio Google Calendar API**
-  - **Descripción**: Completar biblioteca para interactuar con Google Calendar
-  - **Criterios de Aceptación**:
-    * Obtiene eventos de calendario específico con filtros de fecha
-    * Busca evento individual por ID
-    * Lista calendarios disponibles del usuario
-    * Configura watch/webhook para notificaciones automáticas
-
-- [ ] **Sincronización Manual de Eventos**
-  - **Descripción**: Endpoint para sincronizar eventos bajo demanda
-  - **Criterios de Aceptación**:
-    * Sincroniza todos los eventos de un rango de fechas
-    * Respuesta incluye cantidad de eventos procesados
-    * Maneja calendarios grandes sin timeout
-    * Permite re-sincronización de eventos específicos
-
-### **Día 3-4: Base de Datos y Validación**
-- [ ] **Esquema Final de Eventos**
-  - **Descripción**: Asegurar modelo de BD completo para eventos
-  - **Criterios de Aceptación**:
-    * Incluye todos los campos necesarios de Google Calendar
-    * googleEventId es único y requerido
-    * Campos de fecha/hora manejan zonas horarias correctamente
-    * Relaciones con tabla de asistencias funcionan correctamente
-
-- [ ] **Testing de Sincronización**
-  - **Descripción**: Probar sincronización con calendario real de INAPA
-  - **Criterios de Aceptación**:
-    * Eventos de prueba se sincronizan en menos de 30 segundos
-    * Cambios en Google Calendar se reflejan en BD local
-    * No se crean duplicados en múltiples sincronizaciones
-    * Maneja eventos recurrentes apropiadamente
+**META: 3 días para MVP funcional** ⚡
 
 ---
 
-## 🟡 **FASE 2: FORMULARIO DE ASISTENCIA** (2-3 días)
+## � **TAREAS URGENTES (SOLO ESTAS 3)**
 
-### **Día 4-5: Formulario Completamente Funcional**
-- [ ] **Validación de Cédulas Dominicanas**
-  - **Descripción**: Implementar validación robusta de cédulas RD
-  - **Criterios de Aceptación**:
-    * Valida formato de 11 dígitos con algoritmo estándar
-    * Rechaza cédulas inválidas con mensaje claro
-    * Acepta entrada con o sin guiones/espacios
-    * Previene envío de formulario con cédula inválida
+### **DÍA 1: Sincronización**
+- [ ] `app/api/webhooks/google/calendar/route.ts` - Webhook funcional completo
+- [ ] `lib/google/calendar.ts` - Funciones básicas de Google Calendar API
+- [ ] `prisma/schema.prisma` - Agregar modelo Organizer + relaciones
 
-- [ ] **UX/UI del Formulario**
-  - **Descripción**: Mejorar experiencia de usuario del formulario
-  - **Criterios de Aceptación**:
-    * Formulario es completamente responsive (móvil/desktop)
-    * Validaciones en tiempo real mientras usuario escribe
-    * Mensajes de error claros y específicos
-    * Confirmación visual inmediata al registrar asistencia
+### **DÍA 2: Vista Organizador**  
+- [ ] `app/dashboard/eventos/page.tsx` - Lista de eventos con links
+- [ ] `app/api/events/[id]/route.ts` - Endpoint obtener evento específico
 
-- [ ] **Prevención de Duplicados**
-  - **Descripción**: Evitar registros duplicados de asistencia
-  - **Criterios de Aceptación**:
-    * No permite registrar misma cédula dos veces por evento
-    * Mensaje claro si persona ya está registrada
-    * Opción para actualizar datos si ya existe registro
-    * Validación tanto frontend como backend
-
-### **Día 5-6: Integración Dashboard-Formulario**
-- [ ] **Links Dinámicos para Eventos**
-  - **Descripción**: Generar URLs únicas para cada evento
-  - **Criterios de Aceptación**:
-    * Cada evento tiene URL única basada en ID
-    * URLs son fáciles de compartir y recordar
-    * Eventos inactivos muestran mensaje apropiado
-    * Redirección automática si evento no existe
-
-- [ ] **Estados de Eventos**
-  - **Descripción**: Manejar diferentes estados de eventos
-  - **Criterios de Aceptación**:
-    * Eventos futuros: formulario activo y funcional
-    * Eventos en curso: formulario activo con indicador de tiempo
-    * Eventos pasados: formulario deshabilitado con mensaje
-    * Eventos cancelados: mensaje claro de cancelación
+### **DÍA 3: Formulario Asistencia**
+- [ ] `app/eventos/[id]/page.tsx` - Formulario público completo
+- [ ] `app/api/attendance/route.ts` - Registro asistencia con validaciones
+- [ ] `lib/validations/cedula.ts` - Validación cédulas dominicanas
 
 ---
 
-## 🟢 **FASE 3: DASHBOARD ORGANIZADOR** (1-2 días)
-
-### **Día 6-7: Vista de Organizador**
-- [ ] **Lista de Eventos Sincronizados**
-  - **Descripción**: Dashboard muestra eventos desde Google Calendar
-  - **Criterios de Aceptación**:
-    * Lista todos los eventos del organizador
-    * Muestra información básica (título, fecha, ubicación)
-    * Indica estado actual de cada evento
-    * Permite acceso rápido a detalles de evento
-
-- [ ] **Estadísticas de Asistencia**
-  - **Descripción**: Contadores y métricas por evento
-  - **Criterios de Aceptación**:
-    * Muestra total de asistentes registrados
-    * Porcentaje de asistencia vs invitados esperados
-    * Actualización en tiempo real al registrarse nuevos asistentes
-    * Filtros por fecha y estado de evento
-
-- [ ] **Gestión de Asistentes**
-  - **Descripción**: Ver y administrar lista de asistentes
-  - **Criterios de Aceptación**:
-    * Lista completa de asistentes por evento
-    * Información detallada de cada asistente
-    * Capacidad de exportar lista básica
-    * Búsqueda y filtrado de asistentes
+## 🎯 **DEMO MVP (3 minutos)**
+1. **Ver evento** en dashboard organizador (viene de Google Calendar)
+2. **Copiar link** del formulario de asistencia 
+3. **Abrir formulario** en otra ventana/dispositivo
+4. **Registrar asistencia** con datos válidos (cédula RD)
+5. **Ver asistente** aparecer en dashboard del organizador
 
 ---
 
-## 🛠️ **IMPLEMENTACIÓN TÉCNICA CRÍTICA**
-
-### **1. Webhook Google Calendar (PRIORIDAD #1)**
-**Archivo**: `app/api/webhooks/google/calendar/route.ts`
-**Responsabilidad**: Recibir y procesar notificaciones de cambios en Google Calendar
-**Funciones requeridas**: Manejar eventos creados, actualizados y eliminados
-
-### **2. Sincronización de Eventos**
-**Archivo**: `lib/google/calendar.ts`
-**Responsabilidad**: Interactuar con Google Calendar API y sincronizar a BD local
-**Funciones requeridas**: Obtener eventos, mapear datos, evitar duplicados
-
-### **3. Formulario de Asistencia**
-**Archivo**: `components/forms/AttendanceForm.tsx`
-**Responsabilidad**: Capturar datos de asistentes con validaciones
-**Funciones requeridas**: Validar cédulas RD, prevenir duplicados, confirmar registro
+## ✅ **CRITERIO DE ÉXITO ÚNICO**
+**El organizador puede crear evento en Google Calendar y recibir asistencias via formulario web el mismo día**
 
 ---
 
-## 📋 **ARCHIVOS CRÍTICOS A COMPLETAR**
+## 📊 **ESQUEMA BD MÍNIMO REQUERIDO**
 
-### **APIs Principales - Tareas**
-- [ ] `app/api/webhooks/google/calendar/route.ts` - Implementar procesamiento completo de webhook
-- [ ] `app/api/events/sync/route.ts` - Completar sincronización manual de eventos
-- [ ] `app/api/events/[id]/route.ts` - Endpoint para obtener evento específico  
-- [ ] `app/api/attendance/route.ts` - Mejorar registro de asistencias con validaciones
-- [ ] `app/api/events/[id]/attendees/route.ts` - Crear endpoint para lista de asistentes
+### **Tabla Organizer (NUEVA)**
+- googleUserId (string, único)
+- email (string, único) 
+- name (string)
+- picture (string, opcional)
 
-### **Páginas Principales - Tareas**
-- [ ] `app/eventos/[id]/page.tsx` - Completar formulario de asistencia público
-- [ ] `app/dashboard/eventos/page.tsx` - Crear lista de eventos para organizador
-- [ ] `app/dashboard/eventos/[id]/page.tsx` - Página de detalle de evento con asistentes
+### **Tabla Event (EXISTENTE)**
+- googleEventId (string, único)
+- organizerEmail (string) → relación con Organizer.email
+- título, fechas, ubicación básica
 
-### **Librerías de Negocio - Tareas**
-- [ ] `lib/google/calendar.ts` - Implementar todas las funciones de Google Calendar API
-- [ ] `lib/validations/cedula.ts` - Crear validación robusta de cédulas dominicanas
-- [ ] `lib/db/events.ts` - Funciones de base de datos para eventos
-- [ ] `lib/db/attendance.ts` - Funciones de base de datos para asistencias
+### **Tabla Checkin (EXISTENTE)** 
+- eventId → relación con Event.id
+- datos del asistente + cédula validada
+
+---
+
+## � **FUERA DEL MVP (NO HACER AHORA)**
+
+- ❌ Reportes PDF/Excel
+- ❌ Emails automáticos  
+- ❌ Estadísticas con gráficos
+- ❌ Sistema de roles/permisos
+- ❌ PWA/offline
+- ❌ Tests automatizados
+- ❌ Jobs/tareas programadas
+- ❌ Templates de email elaborados
+
+---
+
+## �️ **ARCHIVOS CRÍTICOS (SOLO ESTOS)**
 
 ---
 

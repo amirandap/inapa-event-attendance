@@ -26,11 +26,23 @@ interface InviteesTableProps {
   checkedInEmails: Set<string>
 }
 
-export function InviteesTable({ invitees, checkedInEmails }: InviteesTableProps) {
+interface InviteesTableProps {
+  invitees: InviteeType[]
+  checkedInEmails: Set<string>
+  organizerEmail?: string
+}
+
+export function InviteesTable({ invitees, checkedInEmails, organizerEmail }: InviteesTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [responseFilter, setResponseFilter] = useState<string>('all')
 
+  // Filtrar organizador de la lista de invitados
   const filteredInvitees = invitees.filter(invitee => {
+    // Excluir el organizador de la lista
+    if (organizerEmail && invitee.email.toLowerCase() === organizerEmail.toLowerCase()) {
+      return false
+    }
+
     const matchesSearch = 
       invitee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invitee.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -57,44 +69,8 @@ export function InviteesTable({ invitees, checkedInEmails }: InviteesTableProps)
     }
   }
 
-  const stats = {
-    total: invitees.length,
-    accepted: invitees.filter(i => i.response === 'accepted').length,
-    declined: invitees.filter(i => i.response === 'declined').length,
-    tentative: invitees.filter(i => i.response === 'tentative').length,
-    noResponse: invitees.filter(i => !i.response || i.response === 'needsAction').length,
-    checkedIn: invitees.filter(i => checkedInEmails.has(i.email)).length
-  }
-
   return (
     <div className="space-y-4">
-      {/* Estadísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <div className="text-center p-3 bg-gray-50 rounded-lg">
-          <div className="text-lg font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total</div>
-        </div>
-        <div className="text-center p-3 bg-green-50 rounded-lg">
-          <div className="text-lg font-bold text-green-600">{stats.checkedIn}</div>
-          <div className="text-sm text-gray-600">Registrados</div>
-        </div>
-        <div className="text-center p-3 bg-blue-50 rounded-lg">
-          <div className="text-lg font-bold text-blue-600">{stats.accepted}</div>
-          <div className="text-sm text-gray-600">Confirmados</div>
-        </div>
-        <div className="text-center p-3 bg-red-50 rounded-lg">
-          <div className="text-lg font-bold text-red-600">{stats.declined}</div>
-          <div className="text-sm text-gray-600">Declinaron</div>
-        </div>
-        <div className="text-center p-3 bg-yellow-50 rounded-lg">
-          <div className="text-lg font-bold text-yellow-600">{stats.tentative}</div>
-          <div className="text-sm text-gray-600">Tentativos</div>
-        </div>
-        <div className="text-center p-3 bg-gray-50 rounded-lg">
-          <div className="text-lg font-bold text-gray-600">{stats.noResponse}</div>
-          <div className="text-sm text-gray-600">Sin respuesta</div>
-        </div>
-      </div>
 
       {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-4">

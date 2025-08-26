@@ -13,6 +13,15 @@ export interface EventType {
   formToken: string
   status: string
   organizerId: number
+  
+  // Campos adicionales de Google Calendar
+  hangoutLink?: string | null
+  htmlLink?: string | null
+  creatorEmail?: string | null
+  creatorName?: string | null
+  eventType?: string | null
+  visibility?: string | null
+  
   createdAt: Date
   updatedAt: Date
   lastSyncAt: Date | null

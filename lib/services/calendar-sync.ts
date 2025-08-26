@@ -27,6 +27,16 @@ interface GoogleCalendarEvent {
     email?: string;
     displayName?: string;
   };
+  hangoutLink?: string;
+  htmlLink?: string;
+  eventType?: string;
+  visibility?: string;
+  conferenceData?: {
+    entryPoints?: Array<{
+      entryPointType: string;
+      uri: string;
+    }>;
+  };
 }
 
 interface SyncResult {
@@ -222,6 +232,15 @@ export class CalendarSyncService {
     const startTime = new Date(googleEvent.start.dateTime || googleEvent.start.date || '');
     const endTime = new Date(googleEvent.end.dateTime || googleEvent.end.date || '');
 
+    // Extraer link de Google Meet
+    let hangoutLink = googleEvent.hangoutLink;
+    if (!hangoutLink && googleEvent.conferenceData?.entryPoints) {
+      const meetEntry = googleEvent.conferenceData.entryPoints.find(
+        entry => entry.entryPointType === 'video' && entry.uri.includes('meet.google.com')
+      );
+      hangoutLink = meetEntry?.uri;
+    }
+
     return {
       googleEventId: googleEvent.id,
       title: googleEvent.summary || 'Sin título',
@@ -230,7 +249,15 @@ export class CalendarSyncService {
       startAt: startTime,
       endAt: endTime,
       organizerId,
-      status: 'active'
+      status: 'active',
+      
+      // Nuevos campos de Google Calendar
+      hangoutLink: hangoutLink || null,
+      htmlLink: googleEvent.htmlLink || null,
+      creatorEmail: googleEvent.creator?.email || null,
+      creatorName: googleEvent.creator?.displayName || null,
+      eventType: googleEvent.eventType || null,
+      visibility: googleEvent.visibility || null,
     };
   }
 

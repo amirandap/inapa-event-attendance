@@ -16,7 +16,11 @@ import {
   Mail,
   Loader2,
   UserCheck,
-  UserX
+  UserX,
+  Video,
+  ExternalLink,
+  User,
+  Eye
 } from 'lucide-react'
 import { useEvent, useInvitees, useCheckins } from '@/lib/hooks/useApi'
 import { formatDate } from '@/lib/utils/dates'
@@ -204,6 +208,51 @@ export default function EventDetailPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Información adicional del evento */}
+                {(event.hangoutLink || event.creatorEmail || event.htmlLink) && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      {event.hangoutLink && (
+                        <div className="flex items-center text-gray-600">
+                          <Video className="h-4 w-4 mr-2" />
+                          <a 
+                            href={event.hangoutLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Unirse a Google Meet
+                          </a>
+                        </div>
+                      )}
+
+                      {event.creatorEmail && event.creatorEmail !== event.organizer?.email && (
+                        <div className="flex items-center text-gray-600">
+                          <User className="h-4 w-4 mr-2" />
+                          <div>
+                            <span className="text-gray-500">Creador: </span>
+                            {event.creatorName || event.creatorEmail}
+                          </div>
+                        </div>
+                      )}
+
+                      {event.htmlLink && (
+                        <div className="flex items-center text-gray-600">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          <a 
+                            href={event.htmlLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Ver en Google Calendar
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -286,7 +335,11 @@ export default function EventDetailPage() {
               </CardHeader>
 
               <TabsContent value="invitees" className="p-6 pt-0">
-                <InviteesTable invitees={invitees} checkedInEmails={checkedInEmails} />
+                <InviteesTable 
+                  invitees={invitees} 
+                  checkedInEmails={checkedInEmails} 
+                  organizerEmail={event.organizer?.email || event.creatorEmail}
+                />
               </TabsContent>
 
               <TabsContent value="checkins" className="p-6 pt-0">

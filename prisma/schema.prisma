@@ -29,6 +29,15 @@ model Event {
   formToken     String     @unique
   status        String     @default("active")
   organizerId   Int
+  
+  // Campos adicionales de Google Calendar
+  hangoutLink   String?    // Link de Google Meet
+  htmlLink      String?    // Link al evento en Google Calendar
+  creatorEmail  String?    // Email del creador del evento
+  creatorName   String?    // Nombre del creador del evento
+  eventType     String?    // Tipo de evento
+  visibility    String?    // Visibilidad del evento
+  
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   checkins      Checkin[]
