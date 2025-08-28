@@ -1,15 +1,13 @@
 // /app/api/TestEmail/route.js
-import { googleCalendarService } from '@/lib/google/calendar';
 import { NextResponse } from 'next/server';
 import { smtpService } from '@/lib/email/smtpService';
 
 export async function POST(request) {
   // Aquí puedes acceder al cuerpo de la solicitud
-  // const data = await request.json(); 
   
   // Datos para el correo (puedes pasarlos desde el cuerpo de la solicitud)
   const emailOptions = {
-    to: 'correo.destino@ejemplo.com', // ⚠️ CAMBIA ESTO por el correo del destinatario
+    to: 'kendrick.neufeld@inapa.gob.do',
     subject: 'Prueba de envío de email con Nodemailer',
     body: '<h1>Hola, este es un correo de prueba enviado con Nodemailer.</h1><p>Funciona sin necesidad de la API de Google Cloud.</p>',
   };

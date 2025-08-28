@@ -1,7 +1,6 @@
 import { google } from 'googleapis';
 import { GoogleCalendarEvent } from '@/lib/types';
 import ICAL from 'ical.js';
-import MailComposer from 'mailcomposer';
 
 // Configuración del fallback iCal
 const ICAL_URL = 'https://calendar.google.com/calendar/ical/c_f02682f1ca102750e235b9686d67b19ede3faf5b244547c677e9685b006e5e3f%40group.calendar.google.com/private-b527da9f779a644f8460cdd8149a2944/basic.ics';
@@ -300,61 +299,6 @@ class GoogleCalendarService {
     return result;
   }
 
-  /**
-   * Enviar invitación por correo usando Gmail API
-   */
-  async sendEmail(options: { to: string, subject: string, body: string }): Promise<any> {
-    try {
-      const client = await this.auth.getClient();
-      const gmail = google.gmail({ version: 'v1', auth: client });
-  
-      const fromAddress = process.env.GMAIL_SENDER;
-  
-      if (!options.to || !options.subject || !options.body) {
-        throw new Error('Email options (to, subject, body) are required.');
-      }
-  
-      const mailComposer = new MailComposer({
-          from: fromAddress,
-          to: options.to,
-          subject: options.subject,
-          html: options.body,
-      });
-  
-      // Use a Promise to handle the callback from mailComposer.build()
-      const emailContent: Buffer = await new Promise((resolve, reject) => {
-          mailComposer.build((error: Error | null, message: Buffer | string) => {
-              if (error) {
-                  reject(error);
-              } else {
-                  // mailcomposer can return a Buffer or a string, so we ensure it's a Buffer
-                  resolve(Buffer.from(message));
-              }
-          });
-      });
-  
-      // Check if emailContent is valid before encoding
-      if (!emailContent || emailContent.length === 0) {
-          throw new Error('Email content is empty or invalid after build process.');
-      }
-  
-      // Encode the content to a URL-safe Base64 string
-      const encodedEmail = emailContent.toString('base64url');
-  
-      const response = await gmail.users.messages.send({
-        userId: 'me',
-        requestBody: {
-          raw: encodedEmail,
-        },
-      });
-  
-      console.log('✅ Correo electrónico enviado exitosamente.');
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error al enviar el correo electrónico:', error);
-      throw error;
-    }
-  }
 }
 
 export const googleCalendarService = new GoogleCalendarService();
