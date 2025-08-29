@@ -228,9 +228,9 @@ export async function PUT(request: NextRequest) {
 
         // 3. Enviar el reporte final al organizador
         await smtpService.sendEmail(
-          organizerEmail,
+          [organizerEmail],
           `Reporte de Asistencia: ${job.event.title}`,
-          `Hola ${job.event.organizer?.displayName || ''},<br><br>Adjunto encontrarás el reporte final de asistencia para tu evento: <strong>${job.event.title}</strong>.<br><br>Han asistido <strong>${totalAttendees}</strong> de <strong>${totalInvitees}</strong> invitados. La tasa de asistencia es del <strong>${attendanceRate}%</strong>.<br><br>Gracias por usar nuestro servicio.<br><br>Saludos,<br>El equipo de INAPA.`,
+          `Hola ${job.event.organizer?.name || ''},<br><br>Adjunto encontrarás el reporte final de asistencia para tu evento: <strong>${job.event.title}</strong>.<br><br>Han asistido <strong>${totalAttendees}</strong> de <strong>${totalInvitees}</strong> invitados. La tasa de asistencia es del <strong>${attendanceRate}%</strong>.<br><br>Gracias por usar nuestro servicio.<br><br>Saludos,<br>El equipo de INAPA.`,
           attachments
         );
         
