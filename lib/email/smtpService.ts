@@ -1,11 +1,11 @@
 // lib/email/smtpService.ts
 import nodemailer from 'nodemailer';
+import MailComposer from 'mailcomposer';
 
 class SmtpService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Verificar que las variables de entorno estén definidas antes de usarlas
     const smtpUser = process.env.SMTP_USER;
     const smtpPassword = process.env.SMTP_PASSWORD;
 
@@ -25,18 +25,20 @@ class SmtpService {
   }
 
   /**
-   * Envía un correo electrónico usando SMTP.
+   * Envía un correo electrónico con adjuntos.
    * @param to - El destinatario del correo.
    * @param subject - El asunto del correo.
    * @param body - El cuerpo del correo (puede ser HTML).
+   * @param attachments - Un array de objetos con los adjuntos.
    */
-  async sendEmail(to: string, subject: string, body: string): Promise<void> {
+  async sendEmail(to: string[], subject: string, body: string, attachments: any[] = []): Promise<void> {
     try {
       const info = await this.transporter.sendMail({
         from: process.env.SMTP_USER,
         to: to,
         subject: subject,
         html: body,
+        attachments: attachments,
       });
 
       console.log('✅ Correo electrónico enviado con éxito. ID del mensaje:', info.messageId);
