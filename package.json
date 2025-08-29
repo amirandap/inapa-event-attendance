@@ -37,6 +37,7 @@
     "kill:port": "lsof -ti :3000 | xargs kill -9 || echo 'No process on port 3000'"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@googleapis/calendar": "^11.0.1",
     "@hookform/resolvers": "^5.2.1",
     "@prisma/client": "^6.14.0",
@@ -57,7 +58,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.2.1",
     "exceljs": "^4.4.0",
     "google-auth-library": "^10.3.0",
     "googleapis": "^156.0.0",
@@ -78,6 +78,7 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5",
     "zod": "^4.0.17"
   },
   "devDependencies": {
@@ -87,11 +88,14 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-pdf": "^6.2.0",
+    "dotenv": "^17.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.4.7",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
-    "tsx": "^4.20.4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.20.5",
     "tw-animate-css": "^1.3.7",
     "typescript": "^5"
   }
