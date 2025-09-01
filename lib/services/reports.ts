@@ -1,6 +1,6 @@
-import * as XLSX from 'xlsx'
-import { prisma } from '@/lib/prisma'
-import { gmailService } from '@/lib/google/gmail'
+import * as XLSX from 'xlsx';
+import { prisma } from '@/lib/prisma';
+import { smtpService } from '@/lib/email/smtpService';
 
 export class ReportsService {
   /**
@@ -14,10 +14,10 @@ export class ReportsService {
         checkins: true,
         organizer: true
       }
-    })
+    });
 
     if (!event) {
-      throw new Error('Evento no encontrado')
+      throw new Error('Evento no encontrado');
     }
 
     // Preparar datos para el Excel
@@ -30,23 +30,23 @@ export class ReportsService {
       'Correo': checkin.correo || '',
       'Teléfono': checkin.telefono || '',
       'Sexo': checkin.sexo || ''
-    }))
+    }));
 
     // Crear workbook y worksheet
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(checkinData)
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(checkinData);
 
     // Añadir worksheet al workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Asistencia')
+    XLSX.utils.book_append_sheet(wb, ws, 'Asistencia');
 
     // Generar buffer del Excel
-    const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+    const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
     return {
       buffer: excelBuffer,
       filename: `asistencia_${event.title}_${new Date().toISOString().split('T')[0]}.xlsx`,
       event,
-    }
+    };
   }
 
   /**
@@ -54,7 +54,7 @@ export class ReportsService {
    */
   async sendAttendanceReport(eventId: string, recipients: string[]) {
     try {
-      const { buffer, filename, event } = await this.generateEventAttendanceReport(eventId)
+      const { buffer, filename, event } = await this.generateEventAttendanceReport(eventId);
 
       // Preparar el contenido del correo
       const emailContent = `
@@ -62,19 +62,19 @@ export class ReportsService {
         <p>Adjunto encontrará el reporte de asistencia del evento.</p>
         <p><strong>Fecha del evento:</strong> ${event.startAt.toLocaleDateString()}</p>
         <p><strong>Total de asistentes:</strong> ${event.checkins.length}</p>
-      `
+      `;
 
       // Enviar correo con el Excel adjunto
-      await gmailService.sendEmail({
-        to: recipients,
-        subject: `Reporte de Asistencia - ${event.title}`,
-        html: emailContent,
-        attachments: [{
+      await smtpService.sendEmail(
+        recipients,
+        `Reporte de Asistencia - ${event.title}`,
+        emailContent,
+        [{
           filename,
           content: buffer,
-          encoding: 'base64'
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }]
-      })
+      );
 
       // Registrar el envío en el log de auditoría
       await prisma.auditLog.create({
@@ -88,12 +88,12 @@ export class ReportsService {
             reportType: 'attendance_excel'
           }
         }
-      })
+      });
 
-      return { success: true }
+      return { success: true };
     } catch (error) {
-      console.error('Error enviando reporte:', error)
-      throw error
+      console.error('Error enviando reporte:', error);
+      throw error;
     }
   }
 
@@ -122,7 +122,7 @@ export class ReportsService {
           }
         }
       })
-    ])
+    ]);
 
     // Preparar datos para el Excel
     const statsData = {
@@ -142,27 +142,27 @@ export class ReportsService {
         'Fecha': event.startAt.toLocaleDateString(),
         'Asistentes': event._count.checkins
       }))
-    }
+    };
 
     // Crear workbook
-    const wb = XLSX.utils.book_new()
+    const wb = XLSX.utils.book_new();
 
     // Añadir hojas
-    const wsGeneral = XLSX.utils.json_to_sheet(statsData.general)
-    const wsGenero = XLSX.utils.json_to_sheet(statsData.genero)
-    const wsEventos = XLSX.utils.json_to_sheet(statsData.eventos)
+    const wsGeneral = XLSX.utils.json_to_sheet(statsData.general);
+    const wsGenero = XLSX.utils.json_to_sheet(statsData.genero);
+    const wsEventos = XLSX.utils.json_to_sheet(statsData.eventos);
 
-    XLSX.utils.book_append_sheet(wb, wsGeneral, 'Estadísticas Generales')
-    XLSX.utils.book_append_sheet(wb, wsGenero, 'Asistencia por Género')
-    XLSX.utils.book_append_sheet(wb, wsEventos, 'Top 10 Eventos')
+    XLSX.utils.book_append_sheet(wb, wsGeneral, 'Estadísticas Generales');
+    XLSX.utils.book_append_sheet(wb, wsGenero, 'Asistencia por Género');
+    XLSX.utils.book_append_sheet(wb, wsEventos, 'Top 10 Eventos');
 
     // Generar buffer del Excel
-    const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+    const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
     return {
       buffer: excelBuffer,
       filename: `estadisticas_generales_${new Date().toISOString().split('T')[0]}.xlsx`
-    }
+    };
   }
 
   /**
@@ -170,25 +170,25 @@ export class ReportsService {
    */
   async sendStatsReport(recipients: string[]) {
     try {
-      const { buffer, filename } = await this.generateStatsReport()
+      const { buffer, filename } = await this.generateStatsReport();
 
       // Preparar el contenido del correo
       const emailContent = `
         <h2>Reporte de Estadísticas Generales</h2>
         <p>Adjunto encontrará el reporte de estadísticas generales del sistema.</p>
-      `
+      `;
 
       // Enviar correo con el Excel adjunto
-      await gmailService.sendEmail({
-        to: recipients,
-        subject: 'Reporte de Estadísticas Generales',
-        html: emailContent,
-        attachments: [{
+      await smtpService.sendEmail(
+        recipients,
+        'Reporte de Estadísticas Generales',
+        emailContent,
+        [{
           filename,
           content: buffer,
-          encoding: 'base64'
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }]
-      })
+      );
 
       // Registrar el envío en el log de auditoría
       await prisma.auditLog.create({
@@ -200,14 +200,50 @@ export class ReportsService {
             recipients
           }
         }
-      })
+      });
 
-      return { success: true }
+      return { success: true };
     } catch (error) {
-      console.error('Error enviando reporte de estadísticas:', error)
-      throw error
+      console.error('Error enviando reporte de estadísticas:', error);
+      throw error;
     }
+  }
+
+  /**
+   * Obtiene un resumen completo de un evento para la generación de reportes.
+   */
+  async getEventSummary(eventId: string) {
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        invitees: true,
+        checkins: true,
+      },
+    });
+
+    if (!event) {
+      throw new Error('Event not found.');
+    }
+
+    const checkinEmails = new Set(event.checkins.map(c => c.correo));
+
+    const attendees = event.invitees.map(invitee => ({
+      name: invitee.nombre,
+      email: invitee.email,
+      checkedIn: checkinEmails.has(invitee.email),
+    }));
+
+    const totalInvitees = event.invitees.length;
+    const totalCheckins = event.checkins.length;
+
+    return {
+      eventName: event.title,
+      date: event.startAt.toLocaleDateString(),
+      totalInvitees,
+      totalCheckins,
+      attendees,
+    };
   }
 }
 
-export const reportsService = new ReportsService()
+export const reportsService = new ReportsService();

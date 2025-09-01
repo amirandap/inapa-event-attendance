@@ -1,12 +1,14 @@
-import { NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { 
   successResponse, 
   errorResponse, 
   handleCors,
   getRequestBody,
   internalServerErrorResponse
-} from '@/lib/api/responses'
+} from '@/lib/api/responses';
+import { generateEventReport } from '@/lib/pdf/generator';
+import { smtpService } from '@/lib/email/smtpService';
 
 export async function OPTIONS(request: NextRequest) {
   return handleCors(request)
@@ -200,30 +202,38 @@ export async function PUT(request: NextRequest) {
 
     for (const job of jobsToExecute) {
       try {
+        const organizerEmail = job.event.organizer?.email;
+        if (!organizerEmail) {
+          console.warn(`No se pudo encontrar el correo del organizador para el evento ${job.event.title}. Saltando...`);
+          continue;
+        }
+
         // Obtener estadísticas del evento
         const totalInvitees = job.event.invitees.length
         const totalAttendees = job.event.checkins.length
         const attendanceRate = totalInvitees > 0 ? (totalAttendees / totalInvitees * 100).toFixed(2) : '0'
-
-        // Lista de asistentes para email de agradecimiento
-        const attendeeEmails = job.event.checkins
-          .map(checkin => checkin.correo)
-          .filter(email => email) as string[]
-
-        // Lista de invitados que no asistieron para follow-up
-        const attendedEmails = new Set(attendeeEmails)
-        const nonAttendeeEmails = job.event.invitees
-          .filter(invitee => invitee.email && !attendedEmails.has(invitee.email))
-          .map(invitee => invitee.email)
-
+        
         console.log(`Ejecutando job final ${job.id} para evento ${job.event.title}`)
         console.log(`Estadísticas: ${totalAttendees}/${totalInvitees} asistieron (${attendanceRate}%)`)
-        console.log(`Enviando emails a ${attendeeEmails.length} asistentes y ${nonAttendeeEmails.length} no asistentes`)
+        
+        // 1. Generar el reporte PDF
+        const pdfBuffer = await generateEventReport(job.eventId);
 
-        // Simular envío de emails finales
-        // 1. Email de agradecimiento a asistentes
-        // 2. Email de follow-up a no asistentes
-        // 3. Reporte final al organizador
+        // 2. Definir el adjunto
+        const attachments = [{
+          filename: 'reporte-asistencia.pdf',
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        }];
+
+        // 3. Enviar el reporte final al organizador
+        await smtpService.sendEmail(
+          [organizerEmail],
+          `Reporte de Asistencia: ${job.event.title}`,
+          `Hola ${job.event.organizer?.name || ''},<br><br>Adjunto encontrarás el reporte final de asistencia para tu evento: <strong>${job.event.title}</strong>.<br><br>Han asistido <strong>${totalAttendees}</strong> de <strong>${totalInvitees}</strong> invitados. La tasa de asistencia es del <strong>${attendanceRate}%</strong>.<br><br>Gracias por usar nuestro servicio.<br><br>Saludos,<br>El equipo de INAPA.`,
+          attachments
+        );
+        
 
         // Marcar job como enviado
         await prisma.emailJob.update({
@@ -246,8 +256,6 @@ export async function PUT(request: NextRequest) {
               totalInvitees,
               totalAttendees,
               attendanceRate: `${attendanceRate}%`,
-              attendeeEmails: attendeeEmails.length,
-              nonAttendeeEmails: nonAttendeeEmails.length,
               executedAt: new Date().toISOString()
             }
           }
@@ -267,7 +275,6 @@ export async function PUT(request: NextRequest) {
           totalInvitees,
           totalAttendees,
           attendanceRate: `${attendanceRate}%`,
-          emailsSent: attendeeEmails.length + nonAttendeeEmails.length,
           status: 'sent'
         })
 

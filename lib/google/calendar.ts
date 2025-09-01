@@ -29,7 +29,8 @@ class GoogleCalendarService {
         credentials,
         scopes: [
           'https://www.googleapis.com/auth/calendar',
-          'https://www.googleapis.com/auth/calendar.events'
+          'https://www.googleapis.com/auth/calendar.events',
+          'https://www.googleapis.com/auth/gmail.send'
         ]
       });
 
@@ -297,6 +298,7 @@ class GoogleCalendarService {
     
     return result;
   }
+
 }
 
 export const googleCalendarService = new GoogleCalendarService();
