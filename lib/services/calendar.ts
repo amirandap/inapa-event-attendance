@@ -1,21 +1,18 @@
-import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { handleCors, successResponse, internalServerErrorResponse } from '@/lib/api/responses';
 import { google } from 'googleapis';
+import { prisma } from '@/lib/prisma';
 import { GoogleCalendarEvent } from '@/lib/types/calendar';
 import { generateUniqueFormToken } from '@/lib/utils/form-tokens';
-
-// --- Servicio de Calendario Integrado ---
 
 class CalendarService {
   private auth: any;
   private calendarId: string;
 
   constructor() {
+    // ... (Lógica de autenticación con Google)
     try {
       const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
       if (!privateKey || !process.env.GOOGLE_CLIENT_EMAIL) {
-        throw new Error('Las credenciales de la Cuenta de Servicio de Google no están definidas.');
+        throw new Error('Credenciales de Service Account de Google no están definidas.');
       }
       this.auth = new google.auth.GoogleAuth({
         credentials: {
@@ -35,13 +32,16 @@ class CalendarService {
    * Sincroniza un único evento. Busca si existe, y si no, lo crea.
    */
   async syncSingleEventById(googleEventId: string): Promise<void> {
+    // 1. Obtener los datos más recientes del evento desde la API de Google
     const googleEvent = await this.getEventDetails(googleEventId);
 
     if (!googleEvent) {
+      // Si el evento ya no se encuentra en Google, lo tratamos como una cancelación.
       await this.cancelEventByGoogleId(googleEventId);
       return;
     }
 
+    // 2. Buscar si ya tenemos este evento en nuestra base de datos
     const localEvent = await prisma.event.findUnique({
       where: { googleEventId },
     });
@@ -56,22 +56,26 @@ class CalendarService {
     };
 
     if (localEvent) {
+      // 3. Si existe, lo ACTUALIZAMOS en Prisma
       await prisma.event.update({
         where: { id: localEvent.id },
         data: eventData,
       });
       console.log(`🔄 Evento actualizado en Prisma: "${eventData.title}"`);
     } else {
+      // 4. Si no existe, lo CREAMOS en Prisma
       await prisma.event.create({
         data: {
           ...eventData,
           googleEventId: googleEvent.id,
-          formToken: await generateUniqueFormToken(),
-          organizer: { connect: { email: 'minutas@inapa.gob.do' } },
+          formToken: await generateUniqueFormToken(), // Asignamos un token para el formulario
+          organizer: { connect: { email: 'minutas@inapa.gob.do' } }, // Conectamos a un organizador por defecto
         },
       });
       console.log(`✨ Evento nuevo creado en Prisma: "${eventData.title}"`);
     }
+    
+    // Aquí también se sincronizarían los asistentes (invitees)
   }
 
   /**
@@ -82,12 +86,13 @@ class CalendarService {
       where: { googleEventId },
     });
 
+    // Solo actualizamos si existe y no está ya cancelado
     if (localEvent && localEvent.status !== 'cancelled') {
       await prisma.event.update({
         where: { id: localEvent.id },
         data: { status: 'cancelled' },
       });
-      console.log(`🗑️ Evento marcado como cancelado en Prisma: "${localEvent.title}"`);
+      console.log(`🗑️  Evento marcado como cancelado en Prisma: "${localEvent.title}"`);
     }
   }
 
@@ -95,6 +100,7 @@ class CalendarService {
    * Obtiene los detalles de un evento desde la API de Google.
    */
   private async getEventDetails(googleEventId: string): Promise<GoogleCalendarEvent | null> {
+    // ... (Lógica para llamar a la API de google.calendar.events.get)
     try {
         const client = await this.auth.getClient();
         const calendar = google.calendar({ version: 'v3', auth: client });
@@ -105,9 +111,9 @@ class CalendarService {
         return response.data as GoogleCalendarEvent;
     } catch (error: any) {
         if (error.code === 404) {
-            return null;
+            return null; // El evento no existe en Google, no es un error.
         }
-        throw error;
+        throw error; // Otro tipo de error sí debe ser reportado.
     }
   }
 
@@ -124,35 +130,5 @@ class CalendarService {
   }
 }
 
-const calendarService = new CalendarService();
+export const calendarService = new CalendarService();
 
-// --- Manejador del Webhook (El Mensajero) ---
-
-export async function POST(request: NextRequest) {
-  try {
-    const corsResponse = handleCors(request);
-    if (corsResponse) return corsResponse;
-
-    const resourceState = request.headers.get('x-goog-resource-state');
-    const resourceUri = request.headers.get('x-goog-resource-uri');
-
-    const googleEventId = calendarService.extractEventIdFromUri(resourceUri);
-    if (!googleEventId) {
-        return successResponse({}, 'ID de evento no encontrado, omitiendo.');
-    }
-
-    if (resourceState === 'exists') {
-        console.log(`Webhook: Recibido cambio para el evento ${googleEventId}. Delegando a CalendarService.`);
-        await calendarService.syncSingleEventById(googleEventId);
-
-    } else if (resourceState === 'not_exists') {
-        console.log(`Webhook: Recibida eliminación para el evento ${googleEventId}. Delegando a CalendarService.`);
-        await calendarService.cancelEventByGoogleId(googleEventId);
-    }
-
-    return successResponse({}, 'Webhook procesado.');
-  } catch (error) {
-    console.error('Error procesando webhook:', error);
-    return internalServerErrorResponse();
-  }
-}
