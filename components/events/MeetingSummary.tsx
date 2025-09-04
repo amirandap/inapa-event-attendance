@@ -1,74 +1,75 @@
-'use client'
+'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Clock, 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
   Download,
   Mail,
   QrCode,
   Printer,
-  Share2
-} from 'lucide-react'
-import { formatDate } from '@/lib/utils/dates'
-import { EventType, InviteeType } from '@/lib/types'
-import { generateEventQRData } from '@/lib/qr/generator'
-import { useRef, useEffect, useState } from 'react'
-import Image from 'next/image'
+  Share2,
+} from 'lucide-react';
+import { formatDate } from '@/lib/utils/dates';
+import { EventType, InviteeType } from '@/lib/types';
+import { generateEventQRData } from '@/lib/qr/generator';
+import { useRef, useEffect, useState } from 'react';
+import Image from 'next/image';
+import { toast } from 'sonner';
 
 interface MeetingSummaryProps {
-  event: EventType & { organizer?: { name?: string; email: string } }
-  invitees: InviteeType[]
-  qrCodeUrl?: string
-  showActions?: boolean
-  printMode?: boolean
+  event: EventType & { organizer?: { name?: string; email: string } };
+  invitees: InviteeType[];
+  qrCodeUrl?: string;
+  showActions?: boolean;
+  printMode?: boolean;
 }
 
-export function MeetingSummary({ 
-  event, 
-  invitees, 
+export function MeetingSummary({
+  event,
+  invitees,
   qrCodeUrl,
   showActions = true,
-  printMode = false 
+  printMode = false,
 }: MeetingSummaryProps) {
-  const printRef = useRef<HTMLDivElement>(null)
-  const [qrData, setQrData] = useState<any>(null)
+  const printRef = useRef<HTMLDivElement>(null);
+  const [qrData, setQrData] = useState<any>(null);
 
   // Generar datos del QR de forma asíncrona
   useEffect(() => {
     const generateQRData = async () => {
       try {
-        const data = await generateEventQRData(event.id, event.formToken)
-        setQrData(data)
+        const data = await generateEventQRData(event.id, event.formToken);
+        setQrData(data);
       } catch (error) {
-        console.error('Error generating QR data:', error)
+        console.error('Error generating QR data:', error);
         // Fallback
         setQrData({
           shortUrl: `${window.location.origin}/a/${event.formToken}`,
           fullUrl: `${window.location.origin}/a/${event.formToken}`,
           qrCodeUrl: null,
-          shortCode: null
-        })
+          shortCode: null,
+        });
       }
-    }
+    };
 
-    generateQRData()
-  }, [event.id, event.formToken])
+    generateQRData();
+  }, [event.id, event.formToken]);
 
   // Usar QR proporcionado o el generado
-  const finalQrCodeUrl = qrCodeUrl || qrData?.qrCodeUrl
-  const shortUrl = qrData?.shortUrl
-  const shortCode = qrData?.shortCode
+  const finalQrCodeUrl = qrCodeUrl || qrData?.qrCodeUrl;
+  const shortUrl = qrData?.shortUrl;
+  const shortCode = qrData?.shortCode;
 
   const handlePrint = () => {
     if (printRef.current) {
-      const printContent = printRef.current.innerHTML
-      const originalContent = document.body.innerHTML
-      
+      const printContent = printRef.current.innerHTML;
+      const originalContent = document.body.innerHTML;
+
       document.body.innerHTML = `
         <html>
           <head>
@@ -91,37 +92,61 @@ export function MeetingSummary({
             <div class="print-container">${printContent}</div>
           </body>
         </html>
-      `
-      
-      window.print()
-      document.body.innerHTML = originalContent
-      window.location.reload()
-    }
-  }
+      `;
 
-  const handleDownloadPDF = () => {
-    // Aquí implementaríamos la generación de PDF
-    alert('Función de descarga PDF en desarrollo')
-  }
+      window.print();
+      document.body.innerHTML = originalContent;
+      window.location.reload();
+    }
+  };
+
+  const handleDownloadPDF = async (type: 'initial' | 'final') => {
+    const toastId = toast.loading(`Generando PDF... por favor espere.`);
+    try {
+      const response = await fetch(`/api/exports/${event.id}/pdf?type=${type}`);
+
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      
+      const safeTitle = event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      a.download = `${type === 'initial' ? 'QR_Asistencia' : 'Reporte_Final'}_${safeTitle}.pdf`;
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      
+      toast.success('¡PDF generado exitosamente!', { id: toastId });
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      toast.error('No se pudo generar el PDF. Intente de nuevo.', { id: toastId });
+    }
+  };
 
   const handleSendEmail = () => {
-    // Aquí implementaríamos el envío por email
-    alert('Función de envío por email en desarrollo')
-  }
+    toast.info('Función de envío por email en desarrollo');
+  };
 
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
         title: `Resumen - ${event.title}`,
         text: `Resumen de la reunión: ${event.title}`,
-        url: window.location.href
-      })
+        url: window.location.href,
+      });
     } else {
-      // Fallback: copiar URL al clipboard
-      navigator.clipboard.writeText(window.location.href)
-      alert('URL copiada al portapapeles')
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('URL copiada al portapapeles');
     }
-  }
+  };
 
   return (
     <div className={`space-y-6 ${printMode ? 'print-mode' : ''}`}>
@@ -132,9 +157,13 @@ export function MeetingSummary({
             <Printer className="h-4 w-4 mr-2" />
             Imprimir
           </Button>
-          <Button variant="outline" onClick={handleDownloadPDF}>
+          <Button variant="outline" onClick={() => handleDownloadPDF('initial')}>
+            <QrCode className="h-4 w-4 mr-2" />
+            Hoja de QR (PDF)
+          </Button>
+          <Button variant="outline" onClick={() => handleDownloadPDF('final')}>
             <Download className="h-4 w-4 mr-2" />
-            Descargar PDF
+            Reporte Final (PDF)
           </Button>
           <Button variant="outline" onClick={handleSendEmail}>
             <Mail className="h-4 w-4 mr-2" />
@@ -154,7 +183,7 @@ export function MeetingSummary({
             {/* Header */}
             <div className="text-center mb-8 header">
               <div className="mb-4">
-                <Image 
+                <Image
                   src="/images/inapa-logo.svg"
                   alt="INAPA Logo"
                   width={120}
@@ -186,7 +215,9 @@ export function MeetingSummary({
                       {event.title}
                     </h3>
                     {event.description && (
-                      <p className="text-gray-600 mb-4">{event.description}</p>
+                      <p className="text-gray-600 mb-4">
+                        {event.description}
+                      </p>
                     )}
                   </div>
 
@@ -197,8 +228,13 @@ export function MeetingSummary({
                         <div>
                           <div className="font-medium">Fecha y Hora</div>
                           <div className="text-sm text-gray-600">
-                            <div>Inicio: {formatDate(new Date(event.startAt), 'PPPpp')}</div>
-                            <div>Fin: {formatDate(new Date(event.endAt), 'PPPpp')}</div>
+                            <div>
+                              Inicio:{' '}
+                              {formatDate(new Date(event.startAt), 'PPPpp')}
+                            </div>
+                            <div>
+                              Fin: {formatDate(new Date(event.endAt), 'PPPpp')}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -208,7 +244,9 @@ export function MeetingSummary({
                           <MapPin className="h-5 w-5 mr-3 mt-1 text-gray-500" />
                           <div>
                             <div className="font-medium">Ubicación</div>
-                            <div className="text-sm text-gray-600">{event.location}</div>
+                            <div className="text-sm text-gray-600">
+                              {event.location}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -220,7 +258,9 @@ export function MeetingSummary({
                         <div>
                           <div className="font-medium">Organizador</div>
                           <div className="text-sm text-gray-600">
-                            {event.organizer?.name || event.organizer?.email || 'No especificado'}
+                            {event.organizer?.name ||
+                              event.organizer?.email ||
+                              'No especificado'}
                           </div>
                         </div>
                       </div>
@@ -229,15 +269,20 @@ export function MeetingSummary({
                         <Clock className="h-5 w-5 mr-3 mt-1 text-gray-500" />
                         <div>
                           <div className="font-medium">Estado</div>
-                          <Badge 
+                          <Badge
                             className={
-                              event.status === 'active' ? 'bg-green-100 text-green-800' :
-                              event.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                              'bg-gray-100 text-gray-800'
+                              event.status === 'active'
+                                ? 'bg-green-100 text-green-800'
+                                : event.status === 'completed'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800'
                             }
                           >
-                            {event.status === 'active' ? 'Activo' : 
-                             event.status === 'completed' ? 'Completado' : 'Cancelado'}
+                            {event.status === 'active'
+                              ? 'Activo'
+                              : event.status === 'completed'
+                              ? 'Completado'
+                              : 'Cancelado'}
                           </Badge>
                         </div>
                       </div>
@@ -273,7 +318,9 @@ export function MeetingSummary({
                       <div className="w-48 h-48 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
                         <div className="text-center">
                           <QrCode className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                          <p className="text-sm text-gray-500">Generando QR...</p>
+                          <p className="text-sm text-gray-500">
+                            Generando QR...
+                          </p>
                           <p className="text-xs text-gray-400 mt-1 break-all max-w-40">
                             {shortUrl || 'Cargando...'}
                           </p>
@@ -282,17 +329,24 @@ export function MeetingSummary({
                     )}
                   </div>
                   <p className="text-sm text-gray-600 mt-4 max-w-md mx-auto">
-                    Los participantes pueden escanear este código QR con su dispositivo móvil 
-                    para registrar su asistencia de manera rápida y sencilla.
+                    Los participantes pueden escanear este código QR con su
+                    dispositivo móvil para registrar su asistencia de manera
+                    rápida y sencilla.
                   </p>
                   <div className="text-xs text-gray-500 mt-2 space-y-1">
                     {shortCode && (
                       <p>
-                        <strong>Código corto:</strong> <code className="bg-gray-100 px-2 py-1 rounded font-mono text-sm">{shortCode}</code>
+                        <strong>Código corto:</strong>{' '}
+                        <code className="bg-gray-100 px-2 py-1 rounded font-mono text-sm">
+                          {shortCode}
+                        </code>
                       </p>
                     )}
                     <p>
-                      <strong>URL de acceso:</strong> <code className="bg-gray-100 px-1 rounded break-all">{shortUrl || 'Cargando...'}</code>
+                      <strong>URL de acceso:</strong>{' '}
+                      <code className="bg-gray-100 px-1 rounded break-all">
+                        {shortUrl || 'Cargando...'}
+                      </code>
                     </p>
                   </div>
                 </CardContent>
@@ -368,7 +422,9 @@ export function MeetingSummary({
             <div className="mb-8">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-xl">Instrucciones para el Registro</CardTitle>
+                  <CardTitle className="text-xl">
+                    Instrucciones para el Registro
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 text-sm">
@@ -377,7 +433,9 @@ export function MeetingSummary({
                         1
                       </div>
                       <div>
-                        <strong>Escaneado del QR:</strong> Los participantes deben escanear el código QR con la cámara de su dispositivo móvil.
+                        <strong>Escaneado del QR:</strong> Los participantes
+                        deben escanear el código QR con la cámara de su
+                        dispositivo móvil.
                       </div>
                     </div>
                     <div className="flex items-start">
@@ -385,7 +443,9 @@ export function MeetingSummary({
                         2
                       </div>
                       <div>
-                        <strong>Completar formulario:</strong> Al escanear, se abrirá un formulario donde deben ingresar sus datos personales.
+                        <strong>Completar formulario:</strong> Al escanear, se
+                        abrirá un formulario donde deben ingresar sus datos
+                        personales.
                       </div>
                     </div>
                     <div className="flex items-start">
@@ -393,7 +453,8 @@ export function MeetingSummary({
                         3
                       </div>
                       <div>
-                        <strong>Confirmación:</strong> Una vez enviado el formulario, recibirán una confirmación de registro.
+                        <strong>Confirmación:</strong> Una vez enviado el
+                        formulario, recibirán una confirmación de registro.
                       </div>
                     </div>
                     <div className="flex items-start">
@@ -401,13 +462,16 @@ export function MeetingSummary({
                         4
                       </div>
                       <div>
-                        <strong>Acceso alternativo:</strong> Si no pueden escanear el QR, pueden acceder manualmente digitando:
+                        <strong>Acceso alternativo:</strong> Si no pueden
+                        escanear el QR, pueden acceder manualmente digitando:
                         {shortCode ? (
                           <div className="mt-2">
                             <code className="bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg text-lg font-mono font-bold text-blue-800 block w-fit">
                               {window.location.origin}/s/{shortCode}
                             </code>
-                            <p className="text-xs text-gray-500 mt-1">o simplemente: <strong>{shortCode}</strong></p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              o simplemente: <strong>{shortCode}</strong>
+                            </p>
                           </div>
                         ) : (
                           <div className="mt-2">
@@ -423,7 +487,9 @@ export function MeetingSummary({
                         5
                       </div>
                       <div>
-                        <strong>Control manual:</strong> Use la columna &quot;Asistencia&quot; para marcar manualmente los participantes presentes.
+                        <strong>Control manual:</strong> Use la columna
+                        &quot;Asistencia&quot; para marcar manualmente los
+                        participantes presentes.
                       </div>
                     </div>
                   </div>
@@ -434,7 +500,8 @@ export function MeetingSummary({
             {/* Footer */}
             <div className="text-center pt-6 border-t border-gray-200 footer">
               <p className="text-sm text-gray-500">
-                Generado el {formatDate(new Date(), 'PPPpp')} | Sistema de Registro de Asistencias INAPA
+                Generado el {formatDate(new Date(), 'PPPpp')} | Sistema de
+                Registro de Asistencias INAPA
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 ID del Evento: {event.id} | Token: {event.formToken}
@@ -444,5 +511,6 @@ export function MeetingSummary({
         </Card>
       </div>
     </div>
-  )
+  );
 }
+
