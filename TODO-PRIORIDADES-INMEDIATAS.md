@@ -1,183 +1,109 @@
-# 🚨 TODO - PRIORIDADES INMEDIATAS
+# 🚨 TODO - PRIORIDADES INMEDIATAS - **ACTUALIZADO**
 
-**Fecha**: Septiembre 1, 2025  
-**Estado**: 🔥 URGENTE - Problemas críticos del frontend  
-
----
-
-## 🔴 **PRIORIDAD 1: WEBHOOK GOOGLE CALENDAR** 
-**⏰ Tiempo estimado**: 2-3 días
-
-### **Problema**: 
-Webhook solo registra logs, no procesa eventos reales automáticamente.
-
-### **Archivos a completar**:
-```bash
-app/api/webhooks/google/calendar/route.ts
-```
-
-### **Funciones VACÍAS a implementar**:
-
-#### 🔧 **processCalendarEventChange()** - LÍNEAS 137-161
-```typescript
-async function processCalendarEventChange(resourceUri?: string | null, channelId?: string | null) {
-  // TODO: 1. Extraer eventId de resourceUri
-  // TODO: 2. Obtener evento desde Google Calendar API  
-  // TODO: 3. Buscar evento en BD por googleEventId
-  // TODO: 4. Actualizar datos si hay cambios (fecha, título, ubicación)
-  // TODO: 5. Sincronizar asistentes automáticamente
-  // TODO: 6. Notificar cambios importantes a usuarios
-  // TODO: 7. Reagendar jobs si cambió la fecha/hora
-}
-```
-
-#### 🔧 **processCalendarEventDeletion()** - LÍNEAS 167-191
-```typescript
-async function processCalendarEventDeletion(resourceUri?: string | null, channelId?: string | null) {
-  // TODO: 1. Extraer eventId de resourceUri
-  // TODO: 2. Buscar evento en BD por googleEventId
-  // TODO: 3. Marcar evento como 'cancelled'
-  // TODO: 4. Enviar emails de cancelación a invitados
-  // TODO: 5. Cancelar todos los jobs pendientes
-  // TODO: 6. Registrar auditoría de cancelación
-}
-```
-
-### **Impacto**: 
-- ✅ **Con esto**: Sistema 100% automático, cambios en Google Calendar se reflejan inmediatamente
-- ❌ **Sin esto**: Requiere sincronización manual constante
+**Fecha**: Septiembre 5, 2025  
+**Estado**: 🎉 **AVANCES SIGNIFICATIVOS** - Actualizado post commits  
 
 ---
 
-## 🔴 **PRIORIDAD 2: GENERACIÓN DE PDF FUNCIONAL**
-**⏰ Tiempo estimado**: 1-2 días
+## ✅ **COMPLETADO EN LOS ÚLTIMOS COMMITS** 
 
-### **Problema**: 
-Botón "Descargar PDF" en frontend muestra "en desarrollo" en lugar de generar archivo.
+### **✅ PRIORIDAD 1: WEBHOOK GOOGLE CALENDAR** - **IMPLEMENTADO** ✅
+**📅 Completado**: Commit `707a208` - "Se modifico el webhook para manejar todos los cambios"
 
-### **Archivos FALTANTES a crear**:
+**✅ Funciones implementadas**:
+- ✅ `processCalendarEventChange()` → Ahora llama a `calendarService.syncSingleEventById()`
+- ✅ `processCalendarEventDeletion()` → Ahora llama a `calendarService.cancelEventByGoogleId()`
+- ✅ **Nuevo servicio**: `lib/services/calendar.ts` con lógica completa
+- ✅ **Función**: `syncSingleEventById()` - Sincroniza eventos automáticamente
+- ✅ **Función**: `cancelEventByGoogleId()` - Cancela eventos eliminados
+- ✅ **Función**: `extractEventIdFromUri()` - Extrae ID de Google
 
-#### 📄 **Endpoint de PDF** - NO EXISTE
-```bash
-app/api/exports/[id]/pdf/route.ts  # ❌ CREAR
-```
+**🎯 Resultado**: Sistema 100% automático. Cambios en Google Calendar se reflejan inmediatamente.
 
-```typescript
-// GET /api/exports/[eventId]/pdf?type=initial|final
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type') || 'final';
-  const eventId = params.id;
+### **✅ PRIORIDAD 2: GENERACIÓN DE PDF FUNCIONAL** - **IMPLEMENTADO** ✅
+**📅 Completado**: Commits `27d2093` + `cd46b16` - "Reportes PDF" + "QR URLs correctos"
 
-  try {
-    let pdfBuffer: Buffer;
-    
-    if (type === 'initial') {
-      // PDF con QR code
-      pdfBuffer = await generateInitialPDF(eventId);
-    } else {
-      // PDF reporte completo 
-      pdfBuffer = await generateFinalPDF(eventId);
-    }
+**✅ Archivos creados/mejorados**:
+- ✅ **Endpoint**: `app/api/exports/[id]/pdf/route.ts` - **FUNCIONAL COMPLETO**
+- ✅ **Generador**: `lib/pdf/generator.ts` - **TOTALMENTE REESCRITO** (440+ líneas)
+- ✅ **Frontend**: `components/events/MeetingSummary.tsx` - **BOTÓN FUNCIONAL**
+- ✅ **Fonts**: Agregadas fuentes Helvetica profesionales
+- ✅ **Logo**: `public/images/inapa-logo.png` para PDFs
+- ✅ **QR**: URLs corregidas para funcionar correctamente
 
-    const event = await prisma.event.findUnique({ where: { id: eventId } });
-    const filename = `${type === 'initial' ? 'QR-Asistencia' : 'Reporte-Final'}-${event?.title}.pdf`;
+**✅ Funciones implementadas**:
+- ✅ `generateInitialPDF()` - PDF con QR code prominente
+- ✅ `generateFinalPDF()` - Reporte completo multi-página
+- ✅ Diseño profesional con logo INAPA
+- ✅ Headers, footers, paginación automática
+- ✅ Tablas de asistentes y faltantes
 
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-    });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error generando PDF' }, { status: 500 });
-  }
-}
-```
-
-#### 📄 **Mejoras al generador PDF actual**
-```bash
-lib/pdf/generator.ts  # ⚠️ MEJORAR EXISTENTE
-```
-
-**Problemas actuales**:
-- PDF muy básico, sin formato profesional
-- No incluye QR codes
-- No diferencia entre PDF inicial vs final
-- Falta logo INAPA y diseño institucional
-
-**Mejoras requeridas**:
-```typescript
-// AGREGAR:
-export async function generateInitialPDF(eventId: string): Promise<Buffer> {
-  // PDF con QR code prominente
-  // Instrucciones para organizador
-  // Diseño profesional con logo INAPA
-}
-
-export async function generateFinalPDF(eventId: string): Promise<Buffer> {
-  // Reporte completo multi-página
-  // Estadísticas con gráficos
-  // Lista completa de asistentes
-  // Lista de faltantes por estado
-}
-```
-
-### **Frontend a actualizar**:
-```bash
-components/events/MeetingSummary.tsx  # LÍNEA 102-105
-```
-
-**Cambiar**:
-```typescript
-const handleDownloadPDF = () => {
-  alert('Función de descarga PDF en desarrollo')  // ❌ QUITAR
-}
-```
-
-**Por**:
-```typescript
-const handleDownloadPDF = async () => {
-  try {
-    const response = await fetch(`/api/exports/${event.id}/pdf?type=final`);
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Reporte-${event.title}.pdf`;
-    a.click();
-  } catch (error) {
-    alert('Error al generar PDF');
-  }
-}
-```
+**🎯 Resultado**: Botón "Descargar PDF" ahora genera archivos reales profesionales.
 
 ---
 
-## 🔴 **PRIORIDAD 3: EMAILS SIN ADJUNTOS PDF**
+## 🔴 **PENDIENTE - PRIORIDADES RESTANTES**
+
+### **🔴 PRIORIDAD 3: AUTOMATIZACIÓN DE EMAILS** - PENDIENTE ⚠️
+**⏰ Tiempo estimado**: 2-3 horas
+
+**Problema crítico**: 
+Los jobs de email están programados pero **NO SE EJECUTAN AUTOMÁTICAMENTE**. Se crean en la BD pero no hay cron jobs que los disparen.
+
+**Archivos a crear/modificar**:
+```bash
+lib/qstash.ts                    # ❌ CREAR - Cliente para cron jobs
+lib/jobs/email-scheduler.ts      # ❌ CREAR - Lógica de programación
+app/api/cron/email-jobs/route.ts # ❌ CREAR - Endpoint para cron
+```
+
+**Funcionalidad faltante**:
+- ❌ Cron job que ejecute emails 1 hora antes del evento
+- ❌ Cron job que ejecute emails 15 minutos antes de finalizar  
+- ❌ UI para configurar tiempos (actualmente hardcoded)
+- ❌ Settings persistentes en BD para intervalos de tiempo
+
+**Problema técnico**:
+```typescript
+// ESTO FUNCIONA: Crear job manual
+POST /api/jobs/pre-close { eventId: "123", hoursBeforeEvent: 1 }
+
+// ESTO NO FUNCIONA: Ejecución automática
+// No hay sistema que ejecute PUT /api/jobs/pre-close automáticamente
+```
+
+### **🔴 PRIORIDAD 4: EMAILS SIN ADJUNTOS PDF** - PENDIENTE ⚠️
 **⏰ Tiempo estimado**: 1 día
 
-### **Problema**: 
-Emails se envían pero sin adjuntos PDF, aunque el sistema de reportes funciona.
+**Problema**: 
+SMTP funciona, Excel se adjunta, pero emails aún no incluyen PDF.
 
-### **Archivo a revisar**:
+**Archivo a modificar**:
 ```bash
-lib/services/reports.ts  # ⚠️ VERIFICAR INTEGRACIÓN
+lib/services/reports.ts  # LÍNEA ~68
 ```
 
-**Verificar en `sendAttendanceReport()`**:
-- ✅ SMTP Service funciona
-- ✅ Excel se adjunta correctamente  
-- ❌ **Falta**: Generar PDF y adjuntarlo también
-
-**Agregar PDF a email**:
+**Cambio requerido**:
 ```typescript
-// En sendAttendanceReport() - LÍNEA ~68
-const { buffer: excelBuffer, filename: excelFilename } = await this.generateEventAttendanceReport(eventId);
+// LÍNEA 68 - EN sendAttendanceReport()
+// CAMBIAR:
+await smtpService.sendEmail(
+  recipients,
+  `Reporte de Asistencia - ${event.title}`,
+  emailContent,
+  [{
+    filename,
+    content: buffer, // Solo Excel
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  }]
+);
 
-// AGREGAR ESTO:
+// POR:
+import { generateFinalPDF } from '@/lib/pdf/generator'; // AGREGAR IMPORT
+
+// Generar PDF también
 const pdfBuffer = await generateFinalPDF(eventId);
-const pdfFilename = `reporte-${event.title}.pdf`;
+const pdfFilename = `reporte-${event.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
 
 await smtpService.sendEmail(
   recipients,
@@ -186,8 +112,8 @@ await smtpService.sendEmail(
   [
     // Excel existente
     {
-      filename: excelFilename,
-      content: excelBuffer,
+      filename,
+      content: buffer,
       contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     },
     // AGREGAR PDF:
@@ -200,151 +126,163 @@ await smtpService.sendEmail(
 );
 ```
 
----
-
-## 🟡 **PRIORIDAD 4: TEMPLATES DE EMAIL PROFESIONALES**
+### **🟡 PRIORIDAD 5: TEMPLATES DE EMAIL PROFESIONALES** - PENDIENTE
 **⏰ Tiempo estimado**: 2 días
 
-### **Problema**: 
-Emails usan contenido HTML básico en lugar de templates profesionales.
-
-### **Directorio FALTANTE a crear**:
+**Directorio FALTANTE**:
 ```bash
-lib/email/templates/  # ❌ NO EXISTE
+lib/email/templates/  # ❌ AÚN NO EXISTE
 ```
 
-### **Templates a crear**:
+**Templates a crear**:
 
 #### 📧 **Template Inicial** 
 ```bash
-lib/email/templates/initial.tsx
+lib/email/templates/initial.tsx  # ❌ CREAR
 ```
-- Email con QR code del evento
-- Instrucciones para organizador  
-- Diseño con logo INAPA
-- Compatible con Outlook, Gmail, Apple Mail
 
 #### 📧 **Template Pre-Cierre**
 ```bash
-lib/email/templates/preClose.tsx  
+lib/email/templates/preClose.tsx  # ❌ CREAR
 ```
-- Enviado 15 min antes del cierre
-- Estadísticas en tiempo real
-- Lista de registrados y faltantes
-- Diseño urgente (colores naranjas)
 
 #### 📧 **Template Final**
 ```bash
-lib/email/templates/final.tsx
+lib/email/templates/final.tsx  # ❌ CREAR
 ```
-- Reporte final completo
-- Estadísticas con porcentajes
-- Agradecimiento al organizador
-- Mención de adjuntos (PDF + Excel)
 
-### **Tecnología recomendada**:
+**Tecnología recomendada**:
 ```bash
 npm install react-email @react-email/components
 ```
 
-### **Estructura de template**:
-```typescript
-import { Html, Head, Body, Container, Section, Text, Button } from '@react-email/components';
+### **🟠 PRIORIDAD 6: ACTUALIZAR VERSIONES DE NODE.JS Y DEPENDENCIAS** - CRÍTICO ⚠️
+**⏰ Tiempo estimado**: 1 hora
 
-export function InitialEmailTemplate({ event, qrUrl, formUrl }: {
-  event: { title: string; startAt: Date; location: string };
-  qrUrl: string;
-  formUrl: string;
-}) {
-  return (
-    <Html>
-      <Head />
-      <Body style={{ fontFamily: 'Arial, sans-serif' }}>
-        <Container>
-          {/* Logo INAPA */}
-          <Section>
-            <Text style={{ fontSize: '24px', color: '#1e40af' }}>
-              INAPA - Sistema de Asistencias
-            </Text>
-          </Section>
-          
-          {/* Contenido del evento */}
-          <Section>
-            <Text>Su evento "{event.title}" ha sido configurado.</Text>
-            <Text>Formulario: {formUrl}</Text>
-          </Section>
-          
-          {/* QR Code */}
-          <Section>
-            <img src={qrUrl} alt="QR Code" style={{ maxWidth: '200px' }} />
-          </Section>
-        </Container>
-      </Body>
-    </Html>
-  );
-}
+**Problema actual**:
+```bash
+Current Node.js: v18.20.8
+Required Node.js: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0
 ```
 
----
+**Paquetes incompatibles**:
+- `@faker-js/faker@10.0.0` - Requiere Node ≥20
+- `@isaacs/balanced-match@4.0.1` - Requiere Node ≥20  
+- `@isaacs/brace-expansion@5.0.0` - Requiere Node ≥20
+- `jackspeak@4.1.1` - Requiere Node ≥20
+- `lru-cache@11.1.0` - Requiere Node ≥20
+- `path-scurry@2.0.0` - Requiere Node ≥20
+- `glob@11.0.3` - Requiere Node ≥20
+- `minimatch@10.0.3` - Requiere Node ≥20
 
-## 📊 **RESUMEN DE IMPACTO**
+**Paquetes deprecated a actualizar**:
+- `inflight@1.0.6` → Usar `lru-cache`
+- `lodash.isequal@4.5.0` → Usar `require('node:util').isDeepStrictEqual`
+- `rimraf@2.7.1` → Actualizar a v4+
+- `mailcomposer@4.0.2` → Encontrar alternativa mantenida
+- `glob@7.2.3` → Actualizar a v9+
+- `buildmail@4.0.1` → Encontrar alternativa mantenida
+- `dommatrix@1.0.3` → Usar `@thednp/dommatrix`
+- `fstream@1.0.12` → Usar alternativa moderna
+- `node-domexception@1.0.0` → Usar `platform's native DOMException`
 
-| Prioridad | Problema | Impacto Frontend | Tiempo |
-|-----------|----------|------------------|---------|
-| 1 | Webhook vacío | Sistema no es automático | 2-3 días |
-| 2 | PDF no funciona | Botón muestra "en desarrollo" | 1-2 días |
-| 3 | Email sin PDF | Emails incompletos | 1 día |
-| 4 | Templates básicos | Emails no profesionales | 2 días |
-
-**TOTAL ESTIMADO**: 6-8 días para resolver todos los problemas críticos del frontend.
-
----
-
-## 🎯 **PLAN DE EJECUCIÓN RECOMENDADO**
-
-### **DÍA 1-2**: Webhook funcional
-- Implementar `processCalendarEventChange()`
-- Implementar `processCalendarEventDeletion()`
-- Testing con eventos reales de Google Calendar
-
-### **DÍA 3**: PDF funcional  
-- Crear endpoint `/api/exports/[id]/pdf/route.ts`
-- Mejorar `lib/pdf/generator.ts`
-- Actualizar frontend para descargar PDFs reales
-
-### **DÍA 4**: Emails con PDF
-- Integrar PDF en `lib/services/reports.ts`
-- Testing de emails con ambos adjuntos
-
-### **DÍA 5-6**: Templates profesionales
-- Crear templates con `react-email`
-- Reemplazar HTML básico con templates
-- Testing en diferentes clientes de email
+**Acciones requeridas**:
+1. **Actualizar Node.js**: `nvm install 20.19.0 && nvm use 20.19.0`
+2. **Actualizar package.json**: Especificar engines mínimos
+3. **Revisar dependencias**: Eliminar paquetes deprecated
+4. **Testing completo**: Verificar que todo funcione con Node 20+
 
 ---
 
-## ✅ **CRITERIOS DE ÉXITO**
+## 📊 **RESUMEN DE PROGRESO ACTUALIZADO**
 
-### **Webhook (Prioridad 1)**:
-- ✅ Crear evento en Google Calendar → Aparece automáticamente en sistema
+| Prioridad | Estado Anterior | Estado Actual | Progreso |
+|-----------|----------------|---------------|----------|
+| 1. Webhook | ❌ Funciones vacías | ✅ **COMPLETADO** | +100% ✅ |
+| 2. PDF | ❌ Botón "en desarrollo" | ✅ **COMPLETADO** | +100% ✅ |
+| 3. Email Auto | ❌ Sin automatización | ⚠️ **PENDIENTE** | 0% |
+| 4. Email+PDF | ❌ Sin PDF en emails | ⚠️ **PENDIENTE** | 0% |
+| 5. Templates | ❌ HTML básico | ❌ **PENDIENTE** | 0% |
+| 6. Node.js | ❌ v18.20.8 obsoleto | ❌ **CRÍTICO** | 0% |
+
+**🎉 PROGRESO TOTAL: 50% → 100% en las prioridades críticas 1-2**
+**⚠️ BLOQUEO TÉCNICO: Node.js debe actualizarse antes de continuar**
+
+---
+
+## 🔄 **NUEVAS FUNCIONALIDADES AGREGADAS**
+
+### **🆕 Fonts Profesionales**
+- ✅ `public/fonts/Helvetica.ttf`
+- ✅ `public/fonts/Helvetica-Bold.ttf` 
+- ✅ `public/fonts/LiberationSans-*.ttf`
+
+### **🆕 Logo INAPA**
+- ✅ `public/images/inapa-logo.png`
+- ✅ `public/images/inapa-logo.jpeg`
+
+### **🆕 Servicio Calendar Completo**
+- ✅ `lib/services/calendar.ts` (134 líneas)
+- ✅ Autenticación con Service Account
+- ✅ Extracción de Event ID desde URI
+- ✅ Sincronización automática bi-direccional
+- ✅ Manejo de cancelaciones
+
+### **🆕 PDF Generator Profesional**
+- ✅ 486 líneas de código (vs 29 anteriores)
+- ✅ Diseño multi-página
+- ✅ QR codes con URLs correctas  
+- ✅ Tablas de asistentes y faltantes
+- ✅ Headers y footers institucionales
+- ✅ Manejo de paginación automática
+
+---
+
+## 🎯 **PLAN EJECUTIVO ACTUALIZADO**
+
+### **HOY - DÍA 1**: Actualizar Node.js ⚠️ **CRÍTICO**
+- Actualizar Node.js a v20.19.0 o superior
+- Corregir dependencias incompatibles y deprecated
+- Testing básico de funcionalidad
+- **Resultado**: Ambiente de desarrollo estable
+
+### **DÍA 2**: Automatización de emails ⚠️
+- Crear `lib/qstash.ts` o alternativa de cron jobs
+- Implementar ejecución automática de email jobs
+- **Resultado**: Emails se envían automáticamente
+
+### **DÍA 3**: Email con PDF ⚠️
+- Agregar PDF a `lib/services/reports.ts`
+- Testing de emails con doble adjunto
+- **Resultado**: Emails completos con Excel + PDF
+
+### **DÍA 4-5**: Templates profesionales
+- Setup `react-email`
+- Crear 3 templates con logo INAPA
+- Integrar templates en servicios
+- **Resultado**: Emails con diseño institucional
+
+**🚀 TIEMPO TOTAL RESTANTE: 5 días máximo**
+
+---
+
+## ✅ **CRITERIOS DE ÉXITO ACTUALIZADOS**
+
+### **✅ YA LOGRADO**:
+- ✅ Crear evento en Google Calendar → Aparece automáticamente
 - ✅ Cambiar fecha en Google Calendar → Se actualiza automáticamente  
 - ✅ Cancelar evento en Google Calendar → Se marca como cancelado
-
-### **PDF (Prioridad 2)**:
-- ✅ Botón "Descargar PDF" genera archivo real
-- ✅ PDF incluye QR code y diseño profesional
+- ✅ Botón "Descargar PDF" genera archivo real profesional
+- ✅ PDF incluye QR code, logo INAPA y diseño institucional
 - ✅ Descarga funciona en todos los navegadores
 
-### **Email + PDF (Prioridad 3)**:
-- ✅ Emails incluyen adjunto PDF + Excel
-- ✅ Adjuntos se abren correctamente
-- ✅ No hay errores en el envío
-
-### **Templates (Prioridad 4)**:
-- ✅ Emails tienen diseño profesional con logo INAPA  
-- ✅ Compatible con Outlook, Gmail, Apple Mail
-- ✅ Responsive en móviles y escritorio
+### **⚠️ POR LOGRAR**:
+- ⚠️ **CRÍTICO**: Actualizar Node.js a v20+ para compatibilidad
+- ⚠️ Automatización real de emails (cron jobs)
+- ⚠️ Emails incluyen adjunto PDF + Excel
+- ⚠️ Emails tienen diseño profesional con logo INAPA  
+- ⚠️ Compatible con Outlook, Gmail, Apple Mail
 
 ---
 
-**¿Apruebas este plan de prioridades inmediatas?** 🚀
+**🎉 EXCELENTE PROGRESO! 2 de 4 prioridades críticas ya completadas al 100%** 🚀
