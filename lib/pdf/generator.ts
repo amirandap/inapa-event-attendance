@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import PDFDocument from 'pdfkit';
-import QRCode from 'qrcode';
 import fs from 'fs';
 import path from 'path';
 import { formatDate } from '@/lib/utils/dates';
 import { Event, Checkin, Invitee, Organizer } from '@prisma/client';
+import QRCode from 'qrcode';
 
 // --- Definir y usar rutas absolutas para las fuentes ---
 const fonts = {
@@ -67,13 +67,13 @@ function drawHeader(doc: PDFKit.PDFDocument, title: string) {
       const xPosition = (pageW - imageWidth) / 2;
       const yPosition = doc.y;
 
-      doc.image(logoPath, xPosition, yPosition, { fit: [imageWidth, imageHeight] });
-      
-      // SOLUCIÓN: Mover explícitamente el cursor de texto debajo de la imagen
-      doc.y = yPosition + imageHeight + 20;
+      doc.image(logoPath, xPosition, yPosition, {
+        fit: [imageWidth, imageHeight],
+      });
 
+      doc.y = yPosition + imageHeight + 5;
     } else {
-        doc.moveDown(2); // Si no hay logo, bajar un poco el texto
+      doc.moveDown(2);
     }
   } catch (error) {
     console.warn('No se pudo cargar el logo.');
@@ -90,61 +90,88 @@ function drawHeader(doc: PDFKit.PDFDocument, title: string) {
     .fontSize(12)
     .fillColor('#64748b')
     .text('Sistema de Registro de Asistencias INAPA', { align: 'center' });
-  doc.moveDown(3);
+  doc.moveDown(2);
 }
 
 /**
  * Dibuja la ficha de información del evento.
  */
 function drawEventInfoCard(doc: PDFKit.PDFDocument, event: EventWithRelations) {
-    const cardY = doc.y;
-    const cardHeight = 160;
-    const cardContent = drawCard(doc, 50, cardY, 500, cardHeight);
+  const cardY = doc.y;
+  const cardHeight = 160;
+  const cardContent = drawCard(doc, 50, cardY, 500, cardHeight);
 
-    doc.font('Helvetica-Bold').fontSize(14).fillColor('#111827').text('Información del Evento', cardContent.x, cardContent.y);
-    doc.moveDown(0.5); // AJUSTADO: Espacio reducido
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(14)
+    .fillColor('#111827')
+    .text('Información del Evento', cardContent.x, cardContent.y);
+  doc.moveDown(0);
 
-    doc.font(fonts.Helvetica).fontSize(10).fillColor('#4b5563');
-    if (event.description) {
-        doc.text(event.description, {
-            width: cardContent.width,
-            align: 'justify',
-            lineGap: 2,
-        });
-        doc.moveDown(1.5);
-    }
+  doc.font(fonts.Helvetica).fontSize(10).fillColor('#4b5563');
+  if (event.description) {
+    doc.text(event.description, {
+      width: cardContent.width,
+      align: 'justify',
+      lineGap: 2,
+    });
+    doc.moveDown(1.5);
+  }
 
-    const col1X = cardContent.x;
-    const col2X = cardContent.x + 250;
-    const initialY = doc.y;
+  const col1X = cardContent.x;
+  const col2X = cardContent.x + 250;
+  const initialY = doc.y;
 
-    // Columna Izquierda
-    doc.font('Helvetica-Bold').text('Fecha y Hora', col1X, initialY);
-    doc.font(fonts.Helvetica).fontSize(9).fillColor('#64748b')
-       .text(`Inicio: ${formatDate(new Date(event.startAt), 'PPPp')}`, { lineGap: 2 })
-       .text(`Fin: ${formatDate(new Date(event.endAt), 'PPPp')}`);
-    
-    doc.moveDown(1);
-    
-    if (event.location) {
-        doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text('Ubicación', col1X, doc.y);
-        doc.font(fonts.Helvetica).fontSize(9).fillColor('#64748b').text(event.location);
-    }
+  // Columna Izquierda
+  doc.font('Helvetica-Bold').text('Fecha y Hora', col1X, initialY);
+  doc
+    .font(fonts.Helvetica)
+    .fontSize(9)
+    .fillColor('#64748b')
+    .text(`Inicio: ${formatDate(new Date(event.startAt), 'PPPp')}`, {
+      lineGap: 2,
+    })
+    .text(`Fin: ${formatDate(new Date(event.endAt), 'PPPp')}`);
 
-    // Columna Derecha
-    doc.y = initialY;
-    doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text('Organizador', col2X, doc.y);
-    doc.font(fonts.Helvetica).fontSize(9).fillColor('#64748b')
-       .text(event.organizer.name || event.organizer.email);
-       
-    doc.moveDown(1);
-       
-    doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text('Estado', col2X, doc.y);
-    doc.font(fonts.Helvetica).fontSize(9).fillColor('#64748b').text(event.status);
+  doc.moveDown(1);
 
-    // SOLUCIÓN: Resetear la posición X al margen izquierdo
-    doc.x = doc.page.margins.left;
-    doc.y = cardY + cardHeight + 10; // AJUSTADO: Mover cursor debajo de la tarjeta con menos espacio
+  if (event.location) {
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10)
+      .fillColor('#111827')
+      .text('Ubicación', col1X, doc.y);
+    doc
+      .font(fonts.Helvetica)
+      .fontSize(9)
+      .fillColor('#64748b')
+      .text(event.location);
+  }
+
+  // Columna Derecha
+  doc.y = initialY;
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(10)
+    .fillColor('#111827')
+    .text('Organizador', col2X, doc.y);
+  doc
+    .font(fonts.Helvetica)
+    .fontSize(9)
+    .fillColor('#64748b')
+    .text(event.organizer.name || event.organizer.email);
+
+  doc.moveDown(1);
+
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(10)
+    .fillColor('#111827')
+    .text('Estado', col2X, doc.y);
+  doc.font(fonts.Helvetica).fontSize(9).fillColor('#64748b').text(event.status);
+
+  doc.x = doc.page.margins.left;
+  doc.y = cardY + cardHeight + 5;
 }
 
 /**
@@ -162,7 +189,7 @@ function drawFooter(doc: PDFKit.PDFDocument) {
           range.count
         } | Generado el ${formatDate(new Date(), 'PPpp')}`,
         50,
-        780, // AJUSTADO: Se aumentó la coordenada Y para bajar el footer
+        780,
         { align: 'center' }
       );
   }
@@ -204,35 +231,38 @@ export async function generateInitialPDF(eventId: string): Promise<Buffer> {
 
   // Página 1: Hoja de QR
   drawHeader(doc, 'Hoja de Registro de Asistencia');
-  
   drawEventInfoCard(doc, event);
-  doc.moveDown(1); // Espacio ajustado
+  doc.moveDown(2);
 
-  // QR Code
-  const qrCodeSize = 180;
-  const registrationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/a/${event.formToken}`;
-  const qrCodeImage = await QRCode.toDataURL(registrationUrl, {
-    width: qrCodeSize,
-    margin: 1,
-    errorCorrectionLevel: 'H',
-  });
+  try {
+    // SOLUCIÓN: Usar la URL directa con el formToken, que es más robusta.
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const directUrl = `${baseUrl}/a/${event.formToken}`;
 
-  const qrBuffer = Buffer.from(qrCodeImage.split(',')[1], 'base64');
-  
-  const qrX = (doc.page.width - qrCodeSize) / 2;
-  const qrY = doc.y;
-  doc.image(qrBuffer, qrX, qrY, {
-    fit: [qrCodeSize, qrCodeSize],
-  });
+    const qrBuffer = await QRCode.toBuffer(directUrl, {
+      errorCorrectionLevel: 'H',
+      type: 'png',
+      margin: 1,
+      width: 180,
+    });
 
-  // Mover cursor debajo del QR
-  doc.y = qrY + qrCodeSize + 5;
+    const qrCodeSize = 180;
+    const qrX = (doc.page.width - qrCodeSize) / 2;
+    const qrY = doc.y;
+    doc.image(qrBuffer, qrX, qrY, {
+      fit: [qrCodeSize, qrCodeSize],
+    });
+    doc.y = qrY + qrCodeSize + 5;
 
-  doc
-    .font(fonts.Helvetica)
-    .fontSize(9)
-    .fillColor('#4b5563')
-    .text(registrationUrl, { align: 'center', link: registrationUrl });
+    doc
+      .font(fonts.Helvetica)
+      .fontSize(9)
+      .fillColor('#4b5563')
+      .text(directUrl, { align: 'center', link: directUrl });
+  } catch (error) {
+    console.error('Error al generar el QR para el PDF:', error);
+    doc.text('No se pudo generar el código QR.', { align: 'center' });
+  }
 
   doc.moveDown(2);
 
@@ -241,7 +271,10 @@ export async function generateInitialPDF(eventId: string): Promise<Buffer> {
     .font('Helvetica-Bold')
     .fontSize(14)
     .fillColor('#1e40af')
-    .text('Instrucciones para Participantes:', { align: 'left', underline: true }) // Align left to respect margins
+    .text('Instrucciones para Participantes:', {
+      align: 'left',
+      underline: true,
+    })
     .moveDown();
   doc
     .font(fonts.Helvetica)
@@ -288,7 +321,6 @@ export async function generateFinalPDF(eventId: string): Promise<Buffer> {
 
   // --- Página 1: Portada y Resumen ---
   drawHeader(doc, 'Reporte Final de Asistencia');
-  
   drawEventInfoCard(doc, event);
 
   // Tarjeta de Resumen Numérico
@@ -312,19 +344,45 @@ export async function generateFinalPDF(eventId: string): Promise<Buffer> {
   const lineGap = 18;
 
   doc.font(fonts.Helvetica).fontSize(12).fillColor('#374151');
-  
-  doc.text(`• Total de Invitados:`, cardContent.x, statsY)
-     .text(`${totalInvitees}`, cardContent.x + 400, statsY, { width: 50, align: 'right' });
-  
-  doc.text(`• Total de Asistentes Registrados:`, cardContent.x, statsY + lineGap)
-     .text(`${totalCheckins}`, cardContent.x + 400, statsY + lineGap, { width: 50, align: 'right' });
-  
-  doc.text(`• Total de Ausentes:`, cardContent.x, statsY + lineGap * 2)
-     .text(`${absentees.length}`, cardContent.x + 400, statsY + lineGap * 2, { width: 50, align: 'right' });
-  
+
+  doc
+    .text(`• Total de Invitados:`, cardContent.x, statsY)
+    .text(`${totalInvitees}`, cardContent.x + 400, statsY, {
+      width: 50,
+      align: 'right',
+    });
+
+  doc
+    .text(
+      `• Total de Asistentes Registrados:`,
+      cardContent.x,
+      statsY + lineGap
+    )
+    .text(`${totalCheckins}`, cardContent.x + 400, statsY + lineGap, {
+      width: 50,
+      align: 'right',
+    });
+
+  doc
+    .text(`• Total de Ausentes:`, cardContent.x, statsY + lineGap * 2)
+    .text(`${absentees.length}`, cardContent.x + 400, statsY + lineGap * 2, {
+      width: 50,
+      align: 'right',
+    });
+
   doc.font('Helvetica-Bold');
-  doc.text(`• Tasa de Asistencia:`, cardContent.x, statsY + lineGap * 3 + 5)
-     .text(`${attendanceRate}%`, cardContent.x + 400, statsY + lineGap * 3 + 5, { width: 50, align: 'right' });
+  doc
+    .text(
+      `• Tasa de Asistencia:`,
+      cardContent.x,
+      statsY + lineGap * 3 + 5
+    )
+    .text(
+      `${attendanceRate}%`,
+      cardContent.x + 400,
+      statsY + lineGap * 3 + 5,
+      { width: 50, align: 'right' }
+    );
 
   doc.y = cardY + 160;
 
@@ -369,12 +427,10 @@ export async function generateFinalPDF(eventId: string): Promise<Buffer> {
       doc.text(checkin.nombre, 85, y, { width: 150 });
       doc.text(checkin.cedula, 240, y, { width: 90 });
       doc.text(checkin.institucion || 'N/A', 335, y, { width: 140 });
-      doc.text(
-        formatDate(new Date(checkin.createdAt), 'p'),
-        480,
-        y,
-        { width: 70, align: 'right' }
-      );
+      doc.text(formatDate(new Date(checkin.createdAt), 'p'), 480, y, {
+        width: 70,
+        align: 'right',
+      });
       doc.y += 25;
     });
   }
