@@ -17,8 +17,8 @@ export async function GET() {
         calendarId: !!process.env.GOOGLE_CALENDAR_ID
       },
       application: {
-        port: process.env.PORT || '3000',
-        baseUrl: process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
+        port: process.env.PORT || '4040',
+        baseUrl: process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 4040}`,
         nodeEnv: process.env.NODE_ENV || 'development'
       }
     };

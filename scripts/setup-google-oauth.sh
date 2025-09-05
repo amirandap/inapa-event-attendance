@@ -56,7 +56,7 @@ fi
 # Redirect URI
 echo ""
 echo "🌐 Configurando Redirect URI..."
-read -p "📍 Ingresa tu dominio base (ej: http://localhost:3000): " BASE_URL
+read -p "📍 Ingresa tu dominio base (ej: http://localhost:4040): " BASE_URL
 if [ ! -z "$BASE_URL" ]; then
     REDIRECT_URI="${BASE_URL}/api/auth/google/callback"
     update_env_var "GOOGLE_REDIRECT_URI" "$REDIRECT_URI"

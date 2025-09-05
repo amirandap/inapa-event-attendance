@@ -79,8 +79,8 @@ if grep -q "PORT" .env.local; then
     PORT=$(grep "PORT" .env.local | cut -d'=' -f2 | tr -d '"')
     echo "✅ Puerto configurado: $PORT"
 else
-    echo "⚠️  Puerto no especificado, usando 3000 por defecto"
-    PORT="3000"
+    echo "⚠️  Puerto no especificado, usando 4040 por defecto"
+    PORT="4040"
 fi
 
 # Verificar si el servidor está corriendo

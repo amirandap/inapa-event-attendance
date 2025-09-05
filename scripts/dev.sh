@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Usar el puerto de la variable de entorno PORT o 3000 por defecto
-PORT=${PORT:-3000}
+# Usar el puerto de la variable de entorno PORT o 4040 por defecto
+PORT=${PORT:-4040}
 
 echo "🔍 Verificando si hay procesos en el puerto $PORT..."
 
