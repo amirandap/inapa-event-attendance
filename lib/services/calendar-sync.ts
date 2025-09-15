@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { googleOAuthService } from '@/lib/auth/google-oauth';
 import { generateUniqueFormToken } from '@/lib/utils/form-tokens';
+import { smtpService } from '@/lib/email/smtpService';
 
 interface GoogleCalendarEvent {
   id: string;
@@ -23,7 +24,7 @@ interface GoogleCalendarEvent {
   }>;
   created?: string;
   updated?: string;
-  creator?: {
+  organizer?: {
     email?: string;
     displayName?: string;
   };
@@ -280,6 +281,28 @@ export class CalendarSyncService {
         formToken
       }
     });
+
+    try {
+    const organizerEmail = googleEvent.creator?.email || googleEvent.creator?.email;
+    if (organizerEmail) {
+      const subject = `Evento Registrado: ${newEvent.title}`;
+      const body = `
+          <h1>¡Evento Sincronizado Exitosamente!</h1>
+          <p>Hola,</p>
+          <p>El siguiente evento ha sido registrado y sincronizado en el sistema de asistencias de INAPA:</p>
+          <ul>
+              <li><strong>Título:</strong> ${newEvent.title}</li>
+              <li><strong>Fecha de Inicio:</strong> ${new Date(newEvent.startAt).toLocaleString('es-DO')}</li>
+              <li><strong>Ubicación:</strong> ${newEvent.location || 'No especificada'}</li>
+          </ul>
+          <p>Ya puedes gestionar las asistencias y reportes desde el dashboard.</p>
+      `;
+      await smtpService.sendEmail([organizerEmail], subject, body);
+      console.log(`✅ Email de confirmación enviado a ${organizerEmail} para el nuevo evento "${newEvent.title}".`);
+    }
+  } catch (emailError) {
+    console.error(`❌ Error enviando el email de confirmación para el evento ${newEvent.id}:`, emailError);
+  }
 
     console.log(`✅ Evento creado: "${eventData.title}" (${googleEvent.id})`);
 

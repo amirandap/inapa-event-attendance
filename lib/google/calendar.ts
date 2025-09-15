@@ -1,6 +1,8 @@
 import { google } from 'googleapis';
 import { GoogleCalendarEvent } from '@/lib/types';
 import ICAL from 'ical.js';
+import { smtpService } from '@/lib/email/smtpService';
+import { prisma } from '@/lib/prisma';
 
 // Configuración del fallback iCal
 const ICAL_URL = 'https://calendar.google.com/calendar/ical/c_f02682f1ca102750e235b9686d67b19ede3faf5b244547c677e9685b006e5e3f%40group.calendar.google.com/private-b527da9f779a644f8460cdd8149a2944/basic.ics';
@@ -86,33 +88,27 @@ class GoogleCalendarService {
     try {
       console.log('🔄 Obteniendo eventos desde iCal fallback...');
       
-      // Descargar y parsear el archivo iCal
       const response = await fetch(ICAL_URL);
       if (!response.ok) {
         throw new Error(`Error descargando iCal: ${response.status}`);
       }
       
       const icalData = await response.text();
-      
-      // Parsear con ical.js
       const jcalData = ICAL.parse(icalData);
       const comp = new ICAL.Component(jcalData);
       
-      // Obtener todos los eventos VEVENT
       const vevents = comp.getAllSubcomponents('vevent');
       const events: GoogleCalendarEvent[] = [];
       
       for (const vevent of vevents) {
         const event = new ICAL.Event(vevent);
         
-        // Filtrar por rango de fechas si se especifica
         if (timeMin && event.startDate.toJSDate() < timeMin) continue;
         if (timeMax && event.startDate.toJSDate() > timeMax) continue;
         
         events.push(this.transformICalJSEvent(event));
       }
       
-      // Ordenar por fecha de inicio y limitar resultados
       events.sort((a, b) => new Date(a.start.dateTime).getTime() - new Date(b.start.dateTime).getTime());
       
       console.log(`✅ ${events.length} eventos obtenidos desde iCal`);
@@ -156,39 +152,6 @@ class GoogleCalendarService {
   }
 
   /**
-   * Transformar evento iCal (legacy) a nuestro formato
-   */
-  private transformICalEvent(icalEvent: any): GoogleCalendarEvent {
-    return {
-      id: icalEvent.uid || '',
-      summary: icalEvent.summary || 'Sin título',
-      description: icalEvent.description || '',
-      location: icalEvent.location || '',
-      start: {
-        dateTime: new Date(icalEvent.start).toISOString(),
-        timeZone: 'America/Santo_Domingo'
-      },
-      end: {
-        dateTime: new Date(icalEvent.end).toISOString(),
-        timeZone: 'America/Santo_Domingo'
-      },
-      organizer: {
-        email: icalEvent.organizer?.val?.replace('mailto:', '') || '',
-        displayName: icalEvent.organizer?.params?.CN || ''
-      },
-      attendees: icalEvent.attendee ? 
-        (Array.isArray(icalEvent.attendee) ? icalEvent.attendee : [icalEvent.attendee])
-          .map((attendee: any) => ({
-            email: attendee.val?.replace('mailto:', '') || '',
-            displayName: attendee.params?.CN || '',
-            responseStatus: this.mapICalResponseStatus(attendee.params?.PARTSTAT),
-            resource: false
-          })) : [],
-      status: icalEvent.status?.toLowerCase() || 'confirmed'
-    };
-  }
-
-  /**
    * Mapear estado de respuesta iCal a formato Google
    */
   private mapICalResponseStatus(partstat?: string): string {
@@ -202,7 +165,7 @@ class GoogleCalendarService {
   }
 
   /**
-   * Crear un nuevo evento
+   * Crear un nuevo evento y enviar email de confirmación.
    */
   async createEvent(eventData: any): Promise<GoogleCalendarEvent> {
     try {
@@ -213,8 +176,41 @@ class GoogleCalendarService {
         calendarId: this.calendarId,
         requestBody: eventData,
       });
+            
+      const createdEvent = this.transformEvent(response.data);
 
-      return this.transformEvent(response.data);
+      // Encontrar o crear el organizador en nuestra BD
+      const organizer = await prisma.organizer.upsert({
+          where: { email: createdEvent.organizer?.email || 'default@example.com' },
+          update: {},
+          create: {
+              email: createdEvent.organizer?.email || 'default@example.com',
+              name: createdEvent.organizer?.displayName || createdEvent.organizer?.email
+          }
+      });
+      
+      // Enviar email de confirmación
+      if (organizer.email) {
+          const subject = `Evento Registrado: ${createdEvent.summary}`;
+          const body = `
+              <h1>¡Evento Sincronizado Exitosamente!</h1>
+              <p>Hola ${organizer.name || organizer.email},</p>
+              <p>El siguiente evento ha sido registrado y sincronizado en el sistema de asistencias de INAPA:</p>
+              <ul>
+                  <li><strong>Título:</strong> ${createdEvent.summary}</li>
+                  <li><strong>Fecha de Inicio:</strong> ${new Date(createdEvent.start.dateTime).toLocaleString('es-DO')}</li>
+                  <li><strong>Ubicación:</strong> ${createdEvent.location || 'No especificada'}</li>
+              </ul>
+              <p>Ya puedes gestionar las asistencias y reportes desde el dashboard.</p>
+              <br/>
+              <p>Saludos,</p>
+              <p><strong>Sistema de Asistencias INAPA</strong></p>
+          `;
+          await smtpService.sendEmail([organizer.email], subject, body);
+          console.log(`✅ Email de confirmación enviado a ${organizer.email} para el evento "${createdEvent.summary}".`);
+      }
+
+      return createdEvent;
     } catch (error) {
       console.error('Error creando evento:', error);
       throw error;
@@ -258,7 +254,6 @@ class GoogleCalendarService {
   async validateConfiguration(): Promise<{ api: boolean; ical: boolean; message: string }> {
     const result = { api: false, ical: false, message: '' };
     
-    // Probar API de Google Calendar
     try {
       const client = await this.auth.getClient();
       const calendar = google.calendar({ version: 'v3', auth: client });
@@ -273,7 +268,6 @@ class GoogleCalendarService {
       result.message += `❌ API Google Calendar: ${error}\n`;
     }
     
-    // Probar iCal fallback
     try {
       const response = await fetch(ICAL_URL);
       if (response.ok) {

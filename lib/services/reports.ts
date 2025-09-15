@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { prisma } from '@/lib/prisma';
 import { smtpService } from '@/lib/email/smtpService';
+import { generateFinalPDF } from '@/lib/pdf/generator';
 
 export class ReportsService {
   /**
@@ -52,43 +53,45 @@ export class ReportsService {
   /**
    * Genera y envía un reporte de asistencia por correo
    */
-  async sendAttendanceReport(eventId: string, recipients: string[]) {
+async sendAttendanceReport(eventId: string, recipients: string[]) {
     try {
-      const { buffer, filename, event } = await this.generateEventAttendanceReport(eventId);
+      // Generar Excel
+      const { buffer: excelBuffer, filename: excelFilename, event } =
+        await this.generateEventAttendanceReport(eventId);
 
-      // Preparar el contenido del correo
+      // 2. GENERAR EL PDF FINAL
+      const pdfBuffer = await generateFinalPDF(eventId);
+      const pdfFilename = `Reporte-Final-${event.title.replace(
+        /[^a-z0-9]/gi,
+        '_'
+      )}.pdf`;
+
       const emailContent = `
-        <h2>Reporte de Asistencia - ${event.title}</h2>
-        <p>Adjunto encontrará el reporte de asistencia del evento.</p>
+        <h2>Reporte Final de Asistencia - ${event.title}</h2>
+        <p>Adjunto encontrará el reporte de asistencia completo del evento en formatos PDF y Excel.</p>
         <p><strong>Fecha del evento:</strong> ${event.startAt.toLocaleDateString()}</p>
         <p><strong>Total de asistentes:</strong> ${event.checkins.length}</p>
       `;
 
-      // Enviar correo con el Excel adjunto
+      // 3. ADJUNTAR AMBOS ARCHIVOS AL CORREO
       await smtpService.sendEmail(
         recipients,
-        `Reporte de Asistencia - ${event.title}`,
+        `Reporte Final de Asistencia - ${event.title}`,
         emailContent,
-        [{
-          filename,
-          content: buffer,
-          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        }]
+        [
+          {
+            filename: excelFilename,
+            content: excelBuffer,
+            contentType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+          {
+            filename: pdfFilename,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ]
       );
-
-      // Registrar el envío en el log de auditoría
-      await prisma.auditLog.create({
-        data: {
-          action: 'report_sent',
-          entityType: 'event',
-          entityId: event.id,
-          details: {
-            eventTitle: event.title,
-            recipients,
-            reportType: 'attendance_excel'
-          }
-        }
-      });
 
       return { success: true };
     } catch (error) {
